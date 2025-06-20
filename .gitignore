@@ -1,0 +1,8 @@
+build
+bin
+lib*
+pyvenv.cfg
+.conan/*
+!.conan/profiles/
+!.conan/profiles/**
+CMakeUserPresets.json

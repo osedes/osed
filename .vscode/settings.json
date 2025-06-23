@@ -1,0 +1,19 @@
+{
+  "editor.rulers": [
+    80,
+    120
+  ],
+  "editor.lineNumbers": "on",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "notebook.lineNumbers": "on",
+  "notebook.output.textLineLimit": 100,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "cSpell.words": [
+    "Jitendra",
+    "jitmar",
+    "Marndi",
+    "osed"
+  ]
+}

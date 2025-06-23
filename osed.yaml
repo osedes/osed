@@ -1,0 +1,76 @@
+---
+osed: 0.1.0 # @version
+
+entities:
+  - title
+  - documentDescription
+  - version
+  - entityDescription
+  - valueDescription
+  - specialValueDescription
+  - listDescription
+  - mapDescription
+  - type
+  - list
+  - items
+  - map
+  - key
+  - value
+  - markdown
+  - authors
+  # - NOT_DESCRIBED
+
+universals:
+  - common:
+    - title
+    - version
+    - authors
+  - programming:
+    - type
+    - list
+    - items
+    - map
+    - key
+    - value
+    - string
+    - dictionary
+  - markdown
+
+
+particulars:
+  - reserved:
+    - osed
+    - entities
+    - universals
+    - particulars
+  - programming:
+    - dotAlphanumeric
+    - nestedListOfStrings
+
+title: string
+documentDescription: string
+version: dotAlphanumeric
+
+entityDescription:
+  type: map
+  key: string
+  value: valueDescription
+
+valueDescription:
+  - string
+  - nestedListOfStrings
+  - dictionary
+
+specialValueDescription:
+  - listDescription
+  - mapDescription
+
+listDescription:
+  type: list
+  items: valueDescription
+
+mapDescription:
+  type: map
+  key: string
+  value: valueDescription
+...

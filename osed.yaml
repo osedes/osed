@@ -7,7 +7,7 @@ entities:
   - version
   - entityDescription
   - valueDescription
-  - specialValueDescription
+  # - specialValueDescription
   - listDescription
   - mapDescription
   - type
@@ -61,16 +61,16 @@ valueDescription:
   - nestedListOfStrings
   - dictionary
 
-specialValueDescription:
-  - listDescription
-  - mapDescription
+# specialValueDescription:
+#   - listDescription
+#   - mapDescription
 
-listDescription:
-  type: list
-  items: valueDescription
+# listDescription:
+#   type: list
+#   items: valueDescription
 
-mapDescription:
-  type: map
-  key: string
-  value: valueDescription
+# mapDescription:
+#   type: map
+#   key: string
+#   value: valueDescription
 ...

@@ -1,6 +1,8 @@
 # osed.schema.yaml (v0.1.0)
 
+$id: https://osedes.org/schema/osed/v0.1.0
 $schema: "https://json-schema.org/draft/2020-12/schema"
+version: 0.1.0
 title: OSED Document Schema
 type: object
 required:
@@ -11,11 +13,12 @@ properties:
     type: string
     description: >-
       Version of the OSED specification (SemVer)
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
 
   entities:
     type: array
     items:
-      type: string
+      $ref: "#/definitions/entityNamePattern"
     description: >-
       List of described entities in this document
 
@@ -34,9 +37,13 @@ properties:
       $ref: "#/definitions/semanticNode"
 
 propertyNames:
-  pattern: "^[A-Za-z][A-Za-z0-9._-]*$"
+  $ref: "#/definitions/entityNamePattern"
 
 definitions:
+  entityNamePattern:
+    type: string
+    pattern: "^[A-Za-z][A-Za-z0-9._-]*$"
+
   semanticNode:
     description: >-
       A recursive structure used in universals/particulars

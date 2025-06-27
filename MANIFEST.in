@@ -1,0 +1,2 @@
+include schema/osed.schema.yaml
+recursive-include tests/data *.yaml

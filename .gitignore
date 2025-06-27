@@ -6,3 +6,6 @@ pyvenv.cfg
 !.conan/profiles/
 !.conan/profiles/**
 CMakeUserPresets.json
+__pycache__/
+tests/__pycache__/
+osed.egg-info/

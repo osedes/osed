@@ -1,0 +1,4 @@
+osed: 0.1.0
+entities: [user]
+universals:
+  - account

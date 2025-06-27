@@ -1,0 +1,12 @@
+osed: 0.1.0
+entities:
+  - title
+  - entities  # ⚠️ Collides with reserved control key
+  - particulars  # ⚠️ Also collides
+
+universals:
+  - common:
+      - title
+      - authors
+
+documentDescription: string

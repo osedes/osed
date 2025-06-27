@@ -1,0 +1,10 @@
+# Operating systems / execution environments for development, testing and
+# production environments.
+
+development:
+  name: development
+  os: ubuntu-24.04
+
+testing:
+  name: testing
+  os: ubuntu-24.04

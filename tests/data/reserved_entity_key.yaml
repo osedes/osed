@@ -1,0 +1,5 @@
+osed: 0.1.0
+entities: [user, control]
+universals:
+  - [control]
+control: something_unrelated

@@ -1,0 +1,5 @@
+osed: 0.1.0
+entities: [user, account]
+universals:
+  - user
+extraField: true

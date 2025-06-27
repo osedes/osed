@@ -1,5 +1,7 @@
 # OSED - Open Standard Entity Description
 
+![CI](https://github.com/osedes/osed/actions/workflows/osed.yaml/badge.svg)
+
 Standard description of entities and inter-entity relations defined for a
 system
 
@@ -34,6 +36,29 @@ described in
 [[RFC2119](https://www.rfc-editor.org/rfc/rfc2119)]
 [[RFC8174](https://www.rfc-editor.org/rfc/rfc8174)]
 when, and only when, they appear in all capitals, as shown here.
+
+# CLI Usage
+
+The `osed` command-line interface provides tooling for validating and linting
+OSED documents.
+
+## Validate an OSED document
+
+```bash
+osed validate -f osed.yaml
+```
+
+## Lint an OSED document
+```bash
+osed lint --file=osed.yaml
+```
+
+## Return Codes
+| Code  |	Meaning                       |
+|-------|-------------------------------|
+| 0	    | Success                       |
+| 1     |	Validation or linting failed  |
+| 2     |	Input file or schema missing  |
 
 # Specification
 
@@ -189,6 +214,38 @@ taskLabel:
 
 [osed.yaml](osed.yaml) is a minimal example of a YAML document conforming to
 OSED version 0.1.0.
+
+# Schema Versions and Changes
+
+## v0.1.0
+
+Initial version of the schema, with the following structure:
+
+- Required fields: `osed`, `entities`
+- Optional fields: `universals`, `particulars`
+- Recursive `semanticNode` structure for noun grouping
+- Entity descriptions supporting nested maps or flat string lists
+- Naming convention enforced for all property names and entities
+
+## Post-v0.1.0 Refinements
+
+The following improvements were made without breaking compatibility:
+
+- ✅ Defined reusable `entityNamePattern` via `$ref` to ensure consistency in
+naming rules
+- ✅ Added SemVer regex validation for the `osed` field to enforce proper
+versioning format
+- ✅ Introduced `$id` and `version` metadata in the schema to support external
+tooling and hosting
+- ✅ Improved `valueDescription` structure to support only well-defined types
+(no booleans, nulls, or raw scalars)
+- ✅ Removed support for `type: list/map` constructs from the core schema
+(now handled via downstream metadata)
+- ✅ Added `osed_lint.py` tool for semantic validation, checking:
+  - Reserved word misuse
+  - Undeclared/unused/duplicate entity names
+  - Invalid characters in entity names
+  - Misplaced entity descriptions
 
 # Authors
 

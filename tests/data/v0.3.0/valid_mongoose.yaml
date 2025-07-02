@@ -1,0 +1,41 @@
+osed: "0.3.0"
+
+entities:
+  - Person
+  - Post
+  - Comment
+
+universals:
+  - name
+  - password
+  - contact:
+    - email
+    - phone
+
+particulars:
+  - systemId
+
+Person:
+  id: systemId
+  password: password
+  name: name
+  email: email
+  phone: phone
+  posts:
+    mongoose:type: array
+    mongoose:items: Post
+  comments:
+    mongoose:type: map
+    mongoose:key: systemId
+    mongoose:value: Comment
+
+Post:
+  id: systemId
+  title: string
+  content: string
+
+Comment:
+  id: systemId
+  content: string
+  post: Post
+  author: Person

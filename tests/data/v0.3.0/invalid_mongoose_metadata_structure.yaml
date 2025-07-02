@@ -1,0 +1,12 @@
+osed: "0.3.0"
+
+entities:
+  - User
+
+User:
+  id: systemId
+  name: string
+  profile:
+    mongoose:type: object  # Invalid value, should be flagged
+    mongoose:embedded: true  # Invalid property, should be flagged
+    mongoose:value: string

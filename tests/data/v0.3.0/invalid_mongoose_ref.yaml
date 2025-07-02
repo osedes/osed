@@ -1,0 +1,14 @@
+osed: "0.3.0"
+
+entities:
+  - Person
+  - Post
+
+Person:
+  posts:
+    mongoose:type: array
+    mongoose:items: Post
+    mongoose:ref: NotADeclaredEntity  # Invalid
+
+Post:
+  id: systemId

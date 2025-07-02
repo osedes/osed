@@ -1,0 +1,15 @@
+osed: "0.3.0"
+
+entities:
+  - Person
+
+Person:
+  posts:
+    mongoose:type: array
+    mongoose:items: NotAValidType  # Invalid
+  comments:
+    mongoose:type: map
+    mongoose:value: anotherInvalidType  # Invalid
+  tags:
+    mongoose:type: array
+    mongoose:items: string  # Valid

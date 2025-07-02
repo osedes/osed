@@ -1,0 +1,70 @@
+---
+osed: 0.3.0
+
+entities:
+  - user
+  - post
+  - tagList
+  - userMetadata
+
+universals:
+  - email
+  - password
+  - string
+  - number
+  - boolean
+  - date
+
+particulars:
+  - systemId
+
+# Test entity with listDescription
+user:
+  id: systemId
+  email: email
+  password: password
+  tags:
+    type: list
+    items: string
+  posts:
+    type: list
+    items: post
+  metadata:
+    type: map
+    key: string
+    value: string
+
+# Test entity with mapDescription
+post:
+  id: systemId
+  title: string
+  content: string
+  author: user
+  tags:
+    type: list
+    items: string
+  metadata:
+    type: map
+    key: string
+    value: string
+
+# Test entity that is a flat list (enum)
+tagList:
+  - personal
+  - work
+  - urgent
+  - completed
+
+# Test entity with nested mapDescription
+userMetadata:
+  preferences:
+    type: map
+    key: string
+    value: string
+  settings:
+    type: map
+    key: string
+    value:
+      type: map
+      key: string
+      value: string

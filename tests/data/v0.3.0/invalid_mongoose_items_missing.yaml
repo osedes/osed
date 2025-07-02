@@ -1,0 +1,9 @@
+osed: "0.3.0"
+
+entities:
+  - User
+
+User:
+  id: systemId
+  tags:
+    mongoose:type: array  # Missing mongoose:items, should fail

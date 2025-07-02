@@ -1,0 +1,12 @@
+osed: "0.3.0"
+
+entities:
+  - User
+
+User:
+  id: systemId
+  name: string
+  settings:
+    mongoose:type: map
+    mongoose:key: integer  # Invalid, should be 'string'
+    mongoose:value: string

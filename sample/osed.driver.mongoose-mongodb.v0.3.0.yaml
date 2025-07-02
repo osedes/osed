@@ -1,0 +1,108 @@
+osed: 0.3.0
+
+driver: mongoose
+
+entities:
+  - user
+  - post
+  - comment
+  - userProfile
+
+universals:
+  - name
+  - description
+  - contact:
+      - email
+      - phone
+  - string
+  - number
+  - boolean
+  - date
+  - array
+  - list
+  - map
+  - now
+  - objectid
+
+particulars:
+  - systemId
+  - Employee:
+      - position
+      - department
+
+user:
+  id: string
+  email:
+    type: string
+    required: true
+    unique: true
+    index: true
+  password:
+    type: string
+    required: true
+  tags:
+    type: list
+    of: string
+    default: []
+  metadata:
+    type: map
+    of: string
+    default: {}
+  posts:
+    type: array
+    of: objectid
+    ref: post
+  profile:
+    type: objectid
+    ref: userProfile
+    required: true
+  createdAt:
+    type: date
+    default: now
+  isActive:
+    type: boolean
+    default: true
+
+post:
+  id: string
+  title: string
+  content: string
+  author:
+    type: objectid
+    ref: user
+    required: true
+  comments: [objectid]
+  tags:
+    type: list
+    of: string
+  publishedAt:
+    type: date
+  isPublished:
+    type: boolean
+    default: false
+
+comment:
+  id: string
+  content: string
+  author:
+    type: objectid
+    ref: user
+    required: true
+  post:
+    type: objectid
+    ref: post
+    required: true
+  createdAt:
+    type: date
+    default: now
+
+userProfile:
+  id: string
+  displayName: string
+  bio: string
+  avatar: string
+  user:
+    type: objectid
+    ref: user
+    required: true
+    unique: true

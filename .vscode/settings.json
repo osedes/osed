@@ -1,15 +1,47 @@
 {
   "editor.rulers": [
     80,
-    120
+    100
   ],
-  "editor.lineNumbers": "on",
-  "editor.tabSize": 2,
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 80,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
   "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "yaml.format.enable": true,
+  "yaml.format.singleQuote": false,
+  "yaml.format.bracketSpacing": true,
+  "yaml.format.proseWrap": "preserve",
+  "yaml.validate": true,
+  "yaml.schemas": {
+    "schema/osed.schema.v0.3.0.yaml": [
+      "*.osed.yaml",
+      "*.osed.yml"
+    ],
+    "schema/osed.metadata.mongoose-mongo.schema.v0.3.0.yaml": [
+      "metadata/*.yaml",
+      "metadata/*.yml"
+    ]
+  },
+  "python.formatting.provider": "autopep8",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Args": [
+    "--max-line-length=80"
+  ],
   "notebook.lineNumbers": "on",
   "notebook.output.textLineLimit": 100,
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
+  // --- Python Interpreter for Remote Development ---
+  // Set this to the path of the Python executable on your remote server.
+  // This is often inside a virtual environment (e.g., .venv/bin/python).
+  "python.defaultInterpreterPath": "./bin/python",
   "cSpell.words": [
     "Jitendra",
     "jitmar",
@@ -17,5 +49,40 @@
     "osed",
     "pytest",
     "setuptools"
-  ]
+  ],
+  "[python]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.autopep8"
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": false
+  },
+  // --- Rewrap Extension Settings for Hard Wrapping ---
+  // Use Rewrap to automatically format text files like Markdown on save.
+  // For Python, use Rewrap manually on comments/docstrings with Alt+Q.
+  "[*]": {
+    "editor.defaultFormatter": "dnut.rewrap-revived",
+    "editor.formatOnSave": true
+  },
+  // --- C++/CMake Integration Settings ---
+  // Tell the CMake Tools extension where your source and build directories are.
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  // Pass the Conan toolchain file to CMake so it can find dependencies.
+  "cmake.configureArgs": [
+    "-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/build/conan_toolchain.cmake",
+    "-DCMAKE_BUILD_TYPE=Debug"
+  ],
+  // Automatically run our 'conan: install' task before configuring.
+  "cmake.configureTask": "conan: install",
+  // Optional: Improve syntax highlighting for Conan files.
+  "files.associations": {
+    "**/conanfile.txt": "properties"
+  },
+  "cursorpyright.analysis.autoImportCompletions": true,
+  "cursorpyright.analysis.typeCheckingMode": "basic"
 }

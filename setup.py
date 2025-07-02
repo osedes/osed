@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="osed",
-    version="0.1.0",
+    version="0.2.0",
     py_modules=["osed_cli", "osed_validate", "osed_lint"],
     install_requires=[
         "PyYAML",

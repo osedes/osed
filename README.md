@@ -26,7 +26,7 @@ Solutions Architects, Business or Technical Analysts or any individual involved
 in translating business requirement into system design may choose to draft an
 OSED document.
 
-###### Version 0.1.0
+###### Version 0.2.0
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
 NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED",
@@ -213,7 +213,7 @@ taskLabel:
 ```
 
 [osed.yaml](osed.yaml) is a minimal example of a YAML document conforming to
-OSED version 0.1.0.
+OSED version 0.2.0.
 
 # Schema Versions and Changes
 
@@ -227,7 +227,7 @@ Initial version of the schema, with the following structure:
 - Entity descriptions supporting nested maps or flat string lists
 - Naming convention enforced for all property names and entities
 
-## Post-v0.1.0 Refinements
+## v0.2.0
 
 The following improvements were made without breaking compatibility:
 

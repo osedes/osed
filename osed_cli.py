@@ -5,7 +5,7 @@ from osed_validate import validate_file, get_default_version
 from osed_lint import lint_file
 
 DEFAULT_FILE = "osed.yaml"
-DEFAULT_VERSION = "0.1.0"
+DEFAULT_VERSION = "0.2.0"
 
 def get_schema_path(version: str) -> Path:
   return Path(f"schema/osed.schema.v{version}.yaml")
@@ -55,7 +55,7 @@ def main():
   )
   validate_parser.add_argument(
     "--schema",
-    help="Schema version to validate against (e.g., 0.1.0). Default is latest."
+    help="Schema version to validate against (e.g., 0.2.0). Default is latest."
   )
 
   # Lint subcommand

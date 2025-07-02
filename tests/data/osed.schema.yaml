@@ -1,4 +1,4 @@
-# osed.schema.yaml (v0.1.0)
+# osed.schema.yaml (v0.2.0)
 
 $schema: "https://json-schema.org/draft/2020-12/schema"
 title: OSED Document Schema

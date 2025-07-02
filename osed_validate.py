@@ -5,7 +5,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-DEFAULT_VERSION = "0.1.0"
+DEFAULT_VERSION = "0.2.0"
 
 def load_yaml(filepath):
   with open(filepath, "r", encoding="utf-8") as f:

@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - Person
@@ -8,7 +8,7 @@ Person:
   posts:
     mongoose:type: array
     mongoose:items: Post
-    mongoose:ref: NotADeclaredEntity  # Invalid
+    mongoose:ref: NotADeclaredEntity # Invalid
 
 Post:
   id: systemId

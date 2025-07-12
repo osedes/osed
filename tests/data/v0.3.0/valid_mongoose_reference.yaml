@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - User
@@ -10,7 +10,7 @@ User:
   tasks:
     mongoose:type: array
     mongoose:items: entity
-    mongoose:ref: Task  # Reference to Task collection
+    mongoose:ref: Task # Reference to Task collection
 
 Task:
   id: systemId

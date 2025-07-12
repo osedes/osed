@@ -1,8 +1,8 @@
 osed: 0.2.0
 entities:
   - title
-  - entities  # ⚠️ Collides with reserved control key
-  - particulars  # ⚠️ Also collides
+  - entities # ⚠️ Collides with reserved control key
+  - particulars # ⚠️ Also collides
 
 universals:
   - common:

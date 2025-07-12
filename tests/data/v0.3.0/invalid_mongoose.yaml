@@ -1,4 +1,5 @@
-osed: "0.3.0"
+osed: '0.3.0'
+driver: 'mongoose'
 
 entities:
   - Person
@@ -8,8 +9,10 @@ universals:
   - name
   - password
   - contact:
-    - email
-    - phone
+      - email
+      - phone
+  - string
+  - objectid
 
 particulars:
   - systemId
@@ -21,11 +24,26 @@ Person:
   email: email
   phone: phone
   posts:
-    mongoose:type: array
-    items:
-      type: Post
-
-Post:
-  id: systemId
-  title: string
-  content: string
+    type: array
+    of: objectid
+    ref: Post
+  # Invalid: using 'mongoose:' prefix in driver-based approach
+  profile:
+    mongoose:type: objectid
+    mongoose:ref: Post
+  # Valid: using 'value' for map type (now supported)
+  metadata:
+    type: map
+    value: string
+  # Invalid: using invalid type that's not in the enum
+  invalidField:
+    type: invalid_type
+  # Invalid: mixing 'of' and 'items' with different values
+  mixedField:
+    type: array
+    of: string
+    items: objectid
+  # Invalid: using 'unique' with non-boolean value (not covered in other tests)
+  uniqueField:
+    type: string
+    unique: 'not_a_boolean'

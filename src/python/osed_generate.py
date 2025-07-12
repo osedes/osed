@@ -2,14 +2,16 @@
 Generates Mongoose TypeScript schema artifacts from an OSED document.
 """
 
-import json
 from pathlib import Path
 import sys
 from typing import Any, Dict, Tuple
-import argparse
-from .osed_utils import get_arg_parser, load_yaml
+import json
+import re
 
-# Maps OSED universal types to Mongoose Schema constructor names.
+from .osed_utils import get_arg_parser, load_yaml
+from .osed_logging import info, error, warning
+
+# Maps OSED universal types to Mongoose Schema type strings.
 TYPE_MAP: Dict[str, str] = {
     "string": "String",
     "integer": "Number",
@@ -36,580 +38,770 @@ TS_TYPE_MAP: Dict[str, str] = {
 
 # Valid Mongoose types for the new driver-based approach
 VALID_MONGOOSE_TYPES = {
-    "String", "string", "Number", "number", "Date", "date", "Buffer", "buffer",
-    "Boolean", "boolean", "Mixed", "mixed", "ObjectId", "objectid", "Array", "array",
-    "List", "list", "Decimal128", "decimal128", "Map", "map", "Schema", "schema",
-    "UUID", "uuid", "BigInt", "bigint", "Double", "double", "Int32", "int32"
+    "String",
+    "string",
+    "Number",
+    "number",
+    "Date",
+    "date",
+    "Buffer",
+    "buffer",
+    "Boolean",
+    "boolean",
+    "Mixed",
+    "mixed",
+    "ObjectId",
+    "objectid",
+    "Array",
+    "array",
+    "List",
+    "list",
+    "Decimal128",
+    "decimal128",
+    "Map",
+    "map",
+    "Schema",
+    "schema",
+    "UUID",
+    "uuid",
+    "BigInt",
+    "bigint",
+    "Double",
+    "double",
+    "Int32",
+    "int32",
 }
 
 
 def to_camel_case(snake_str: str) -> str:
-  """Converts a snake_case or kebab-case string to camelCase."""
-  parts = snake_str.replace("-", "_").split("_")
-  return parts[0] + "".join(x.title() for x in parts[1:])
+    """Converts a snake_case or kebab-case string to camelCase."""
+    parts = snake_str.replace("-", "_").split("_")
+    return parts[0] + "".join(x.title() for x in parts[1:])
 
 
 def to_pascal_case(snake_str: str) -> str:
-  """Converts a snake_case or kebab-case string to PascalCase."""
-  camel_case = to_camel_case(snake_str)
-  return camel_case[0].upper() + camel_case[1:]
+    """Converts a snake_case or kebab-case string to PascalCase."""
+    camel_case = to_camel_case(snake_str)
+    return camel_case[0].upper() + camel_case[1:]
 
 
 def _format_block(lines: list[str], indent_level: int, suffix: str = "") -> str:
-  """Formats a list of lines into an indented block with braces."""
-  if not lines:
-    return f"{{{suffix}}}"
-  indent = "  " * indent_level
-  inner_indent = "  " * (indent_level + 1)
-  formatted_lines = [f"{inner_indent}{line}" for line in lines]
-  return f"{{\n" + "\n".join(formatted_lines) + f"\n{indent}}}{suffix}"
+    """Formats a list of lines into an indented block with braces."""
+    if not lines:
+        return f"{{{suffix}}}"
+    indent = "  " * indent_level
+    inner_indent = "  " * (indent_level + 1)
+    formatted_lines = [f"{inner_indent}{line}" for line in lines]
+    return "{\n" + "\n".join(formatted_lines) + f"\n{indent}}}{suffix}"
 
 
 def is_driver_metadata(value: Any) -> bool:
-  """Check if a value contains driver metadata keys (type, of, items, ref, etc.)."""
-  if not isinstance(value, dict):
-    return False
-  # Check for driver-specific metadata keys
-  driver_keys = {"type", "of", "items", "ref", "required", "unique", "index", "default", "enum"}
-  # Don't treat already processed values as driver metadata
-  if "type" in value and "value" in value:
-    return False
-  return any(key in value for key in driver_keys)
+    """Check if a value contains driver metadata keys (type, of, items, ref, etc.)."""
+    if not isinstance(value, dict):
+        return False
+    # Check for driver-specific metadata keys
+    driver_keys = {
+        "type",
+        "of",
+        "items",
+        "ref",
+        "required",
+        "unique",
+        "index",
+        "default",
+        "enum",
+    }
+    # Don't treat already processed values as driver metadata
+    # But allow map types with "value" key
+    if (
+        "type" in value
+        and "value" in value
+        and value.get("type") not in ("Map", "map")
+    ):
+        return False
+    return any(key in value for key in driver_keys)
+
+
+def _process_array_metadata(value, declared_entities, metadata):
+    if "of" in value:
+        items_type = value["of"]
+        if items_type in declared_entities or "ref" in value:
+            ref_entity = value.get("ref") or items_type
+            processed_value = {
+                "type": "array",
+                "items": {"type": "reference", "ref": ref_entity},
+            }
+            if "ref" in value:
+                metadata["ref"] = value["ref"]
+        else:
+            processed_value = {"type": "array", "items": items_type}
+    elif "items" in value:
+        items_type = value["items"]
+        if isinstance(items_type, str) and (
+            items_type in declared_entities or "ref" in value
+        ):
+            ref_entity = value.get("ref") or items_type
+            processed_value = {
+                "type": "array",
+                "items": {"type": "reference", "ref": ref_entity},
+            }
+            if "ref" in value:
+                metadata["ref"] = value["ref"]
+        elif isinstance(items_type, dict):
+            processed_value = {"type": "array", "items": items_type}
+        else:
+            processed_value = {"type": "array", "items": items_type}
+    else:
+        raise ValueError(f"type '{value['type']}' requires 'of' or 'items'")
+    return processed_value
+
+
+def _process_map_metadata(value, declared_entities):
+    value_type = value.get("of") or value.get("value")
+    if not value_type:
+        raise ValueError("type 'map' requires 'of' or 'value'")
+    if value_type in declared_entities or "ref" in value:
+        ref_entity = value.get("ref") or value_type
+        return {
+            "type": "map",
+            "value": {"type": "reference", "ref": ref_entity},
+        }
+    return {"type": "map", "value": value_type}
+
+
+def _process_reference_metadata(value):
+    if "ref" in value:
+        ref_entity = value["ref"]
+        return {"type": "reference", "ref": ref_entity}
+    raise ValueError("type 'reference' requires 'ref'")
+
+
+def _process_primitive_metadata(value):
+    return value["type"]
+
+
+def _process_no_type_metadata(value, declared_entities):
+    if len(value) == 1 and list(value.keys())[0] in declared_entities:
+        entity_name = list(value.keys())[0]
+        return {"type": "reference", "ref": entity_name}
+    return value
+
+
+def _extract_metadata(value):
+    metadata = {}
+    for key, val in value.items():
+        if key not in ("type", "of", "items", "ref"):
+            metadata[key] = val
+    return metadata
 
 
 def process_driver_metadata(
-  value: Any, declared_entities: set[str]
+    value: Any, declared_entities: set[str]
 ) -> Tuple[Any, Dict[str, Any]]:
-  """
-  Process driver metadata and extract the actual field definition.
-
-  Returns:
-    Tuple of (processed_value, metadata_dict)
-  """
-  if not isinstance(value, dict):
-    return value, {}
-
-  # Check if this is a driver metadata object
-  if not is_driver_metadata(value):
-    return value, {}
-
-  metadata = {}
-  processed_value = None
-
-  # Extract type
-  if "type" in value:
-    field_type = value["type"]
-    metadata["type"] = field_type
-
-    # Handle different field types
-    if field_type in ("Array", "array", "List", "list"):
-      if "of" in value:
-        items_type = value["of"]
-        # Check if this should be treated as a reference (either items_type is an entity or there's a ref field)
-        if items_type in declared_entities or "ref" in value:
-          # Reference to another entity
-          ref_entity = value.get("ref") or items_type
-          processed_value = {
-            "type": "array",
-            "items": {"type": "reference", "ref": ref_entity}
-          }
-          if "ref" in value:
-            metadata["ref"] = value["ref"]
+    """
+    Process driver metadata and extract the actual field definition.
+    Returns: Tuple of (processed_value, metadata_dict)
+    """
+    if not isinstance(value, dict) or not is_driver_metadata(value):
+        return value, {}
+    metadata = {}
+    processed_value = None
+    if "type" in value:
+        field_type = value["type"]
+        metadata["type"] = field_type
+        if field_type in ("Array", "array", "List", "list"):
+            processed_value = _process_array_metadata(
+                value, declared_entities, metadata
+            )
+        elif field_type in ("Map", "map"):
+            processed_value = _process_map_metadata(value, declared_entities)
+        elif field_type in ("ObjectId", "objectid", "reference"):
+            processed_value = _process_reference_metadata(value)
         else:
-          # Primitive type array
-          processed_value = {
-            "type": "array",
-            "items": items_type
-          }
-      elif "items" in value:
-        items_type = value["items"]
-        if isinstance(items_type, str) and (items_type in declared_entities or "ref" in value):
-          # Reference to another entity
-          ref_entity = value.get("ref") or items_type
-          processed_value = {
-            "type": "array",
-            "items": {"type": "reference", "ref": ref_entity}
-          }
-          if "ref" in value:
-            metadata["ref"] = value["ref"]
-        elif isinstance(items_type, dict):
-          # Items is already a processed structure
-          processed_value = {
-            "type": "array",
-            "items": items_type
-          }
-        else:
-          # Primitive type array
-          processed_value = {
-            "type": "array",
-            "items": items_type
-          }
-      else:
-        raise ValueError(f"type '{field_type}' requires 'of' or 'items'")
-
-    elif field_type in ("Map", "map"):
-      if "of" in value:
-        value_type = value["of"]
-        # Check if this should be treated as a reference (either value_type is an entity or there's a ref field)
-        if value_type in declared_entities or "ref" in value:
-          ref_entity = value.get("ref") or value_type
-          processed_value = {
-            "type": "map",
-            "value": {"type": "reference", "ref": ref_entity}
-          }
-        else:
-          processed_value = {
-            "type": "map",
-            "value": value_type
-          }
-      else:
-        print(f"DEBUG: value keys: {list(value.keys())}, value: {value}")
-        raise ValueError("type 'map' requires 'of'")
-
-    elif field_type in ("ObjectId", "objectid", "reference"):
-      if "ref" in value:
-        ref_entity = value["ref"]
-        processed_value = {
-          "type": "reference",
-          "ref": ref_entity
-        }
-      else:
-        raise ValueError("type 'reference' requires 'ref'")
-
+            processed_value = _process_primitive_metadata(value)
     else:
-      # Primitive type
-      processed_value = field_type
-
-  else:
-    # No type, treat as primitive or entity reference
-    if len(value) == 1 and list(value.keys())[0] in declared_entities:
-      # Direct entity reference
-      entity_name = list(value.keys())[0]
-      processed_value = {
-        "type": "reference",
-        "ref": entity_name
-      }
-    else:
-      # Fallback to original value
-      processed_value = value
-
-  # Extract other metadata
-  for key, val in value.items():
-    if key in ("type", "of", "items", "ref"):  # Skip these as they're already processed
-      continue
-    metadata[key] = val
-
-  return processed_value, metadata
+        processed_value = _process_no_type_metadata(value, declared_entities)
+    # Extract other metadata
+    metadata.update(_extract_metadata(value))
+    return processed_value, metadata
 
 
 def get_entity_dependencies(
     value: Any, declared_entities: set[str]
 ) -> set[str]:
-  """Recursively finds all references to other declared entities."""
-  deps = set()
+    """Recursively finds all references to other declared entities."""
+    deps = set()
 
-  # Process driver metadata first
-  if isinstance(value, dict) and is_driver_metadata(value):
-    processed_value, _ = process_driver_metadata(value, declared_entities)
-    value = processed_value
+    # Process driver metadata first
+    if isinstance(value, dict) and is_driver_metadata(value):
+        processed_value, _ = process_driver_metadata(value, declared_entities)
+        value = processed_value
 
-  if isinstance(value, str):
+    if isinstance(value, str):
+        if value in declared_entities:
+            deps.add(value)
+    elif isinstance(value, list):
+        for item in value:
+            deps.update(get_entity_dependencies(item, declared_entities))
+    elif isinstance(value, dict):
+        for v in value.values():
+            deps.update(get_entity_dependencies(v, declared_entities))
+    return deps
+
+
+def map_osed_to_typescript_type(value, declared_entities, indent_level=0):
+    """Map OSED type to TypeScript type, handling primitives, lists, and maps."""
+    # Handle primitive types
+    if isinstance(value, str):
+        if value == "string" or value == "email":
+            return "string"
+        if value == "number":
+            return "number"
+        if value == "boolean":
+            return "boolean"
+        if value == "date":
+            return "Date"
+        if value in declared_entities:
+            return "Schema.Types.ObjectId"
+        return "any"
+    if isinstance(value, dict):
+        t = value.get("type")
+        if t == "reference" and value.get("ref") in declared_entities:
+            return "Schema.Types.ObjectId"
+        if t in ("array", "list"):
+            items_type = map_osed_to_typescript_type(
+                value["items"], declared_entities, indent_level
+            )
+            return f"{items_type}[]"
+        if t == "map":
+            value_type = map_osed_to_typescript_type(
+                value["value"], declared_entities, indent_level
+            )
+            return f"Record<string, {value_type}>"
+        if t == "boolean":
+            return "boolean"
+        if t == "string" or t == "email":
+            return "string"
+        if t == "number":
+            return "number"
+        if t == "date":
+            return "Date"
+    return "any"
+
+
+def _typescript_type_for_str(value, declared_entities):
+    """Return TypeScript type for a string value."""
     if value in declared_entities:
-      deps.add(value)
-  elif isinstance(value, list):
-    for item in value:
-      deps.update(get_entity_dependencies(item, declared_entities))
-  elif isinstance(value, dict):
-    for v in value.values():
-      deps.update(get_entity_dependencies(v, declared_entities))
-  return deps
-
-
-def map_osed_to_typescript_type(
-    value: Any, declared_entities: set[str], indent_level: int = 0
-) -> str:
-  """Recursively maps an OSED value to a TypeScript type definition string."""
-
-  # Process driver metadata first
-  if isinstance(value, dict) and is_driver_metadata(value):
-    processed_value, metadata = process_driver_metadata(value, declared_entities)
-    value = processed_value
-
-  if isinstance(value, str):
-    if value in declared_entities:
-      pascal_case_ref = to_pascal_case(value)
-      return f"Schema.Types.ObjectId | I{pascal_case_ref}"
+        return "Schema.Types.ObjectId"
     return TS_TYPE_MAP.get(value.lower(), "string")
 
-  if isinstance(value, list) and all(isinstance(v, str) for v in value):
-    return " | ".join(f"'{v}'" for v in value)
 
-  if isinstance(value, dict):
-    # Handle processed value descriptions
+def _typescript_type_for_list(value, declared_entities, indent_level):
+    """Return TypeScript type for a list value."""
+    if len(value) == 1:
+        item_type = map_osed_to_typescript_type(
+            value[0], declared_entities, indent_level
+        )
+        return f"{item_type}[]"
+    item_types = [
+        map_osed_to_typescript_type(item, declared_entities, indent_level)
+        for item in value
+    ]
+    return f"({' | '.join(item_types)})[]"
+
+
+def _typescript_type_for_dict(value, declared_entities, indent_level):
+    """Return TypeScript type for a dict value."""
     if "type" in value:
-      type_val = value["type"]
-      if type_val in ("array", "list"):
-        if "items" in value:
-          item_type = map_osed_to_typescript_type(
-              value["items"], declared_entities, indent_level
-          )
-          # Use Array<T> for complex/union types for better readability
-          if "{" in item_type or "|" in item_type:
-            return f"Array<{item_type}>"
-          return f"{item_type}[]"
-        else:
-          return "any[]"
-      elif type_val == "map":
-        if "value" in value:
-          value_type = map_osed_to_typescript_type(
-              value["value"], declared_entities, indent_level
-          )
-          return f"Record<string, {value_type}>"
-        else:
-          return "Record<string, any>"
-      elif type_val == "reference":
-        if "ref" in value:
-          ref_entity = value["ref"]
-          if ref_entity in declared_entities:
-            pascal_case_ref = to_pascal_case(ref_entity)
-            return f"Schema.Types.ObjectId | I{pascal_case_ref}"
-          else:
-            return "any"
-        else:
-          return "any"
-
-    # Handle nested objects (sub-schemas)
-    closing_brace_indent = "  " * indent_level
-    interface_content = generate_typescript_interface_content(
-        value, declared_entities, indent_level + 1
-    )
-    return f"{{\n{interface_content}\n{closing_brace_indent}}}"
-
-  # Fallback for unsupported structures
-  return "any"
+        if value["type"] == "reference":
+            return "Schema.Types.ObjectId"
+        if value["type"] == "array":
+            items_type = map_osed_to_typescript_type(
+                value["items"], declared_entities, indent_level
+            )
+            return f"{items_type}[]"
+        if value["type"] == "map":
+            value_type = map_osed_to_typescript_type(
+                value["value"], declared_entities, indent_level
+            )
+            return f"Record<string, {value_type}>"
+        if value["type"] == "boolean":
+            return "boolean"
+        return "any"
+    return "any"
 
 
-def map_osed_to_mongoose_field(
-    value: Any, declared_entities: set[str], indent_level: int = 0
-) -> str:
-  """
-  Recursively maps a single OSED value description to a Mongoose field
-  definition string.
-  """
+def _typescript_type_for_other():
+    """Return TypeScript type for other/unknown types."""
+    return "any"
 
-  # Process driver metadata first
-  metadata = {}
-  if isinstance(value, dict) and is_driver_metadata(value):
-    processed_value, metadata = process_driver_metadata(value, declared_entities)
-    value = processed_value
 
-  if isinstance(value, str):
-    # Case 1: It's a reference to another entity
-    if value in declared_entities:
-      field_def = f"{{ type: mongoose.Schema.Types.ObjectId, ref: '{to_pascal_case(value)}' }}"
-    # Case 2: It's a universal primitive type
+def map_osed_to_mongoose_field(value, declared_entities, indent_level=0):
+    """
+    Maps OSED values to Mongoose schema field definitions.
+    Handles complex types like arrays, maps, and references.
+    Always outputs classic Mongoose JS object literal.
+    """
+    if isinstance(value, str):
+        return _mongoose_field_for_dict(value, declared_entities, indent_level)
+    elif isinstance(value, list):
+        return _mongoose_field_for_list(value, declared_entities, indent_level)
+    elif isinstance(value, dict):
+        return _mongoose_field_for_dict(value, declared_entities, indent_level)
     else:
-      mongoose_type = TYPE_MAP.get(value.lower(), "String")
-      field_def = f"{{ type: {mongoose_type} }}"
+        return _mongoose_field_for_other()
 
-    # Apply metadata
-    return apply_driver_metadata(field_def, metadata)
 
-  if isinstance(value, list) and all(isinstance(v, str) for v in value):
-    # Case 3: It's a flat list of strings (enum)
-    enum_values = json.dumps(value)
-    field_def = f"{{ type: String, enum: {enum_values} }}"
-    return apply_driver_metadata(field_def, metadata)
+def _mongoose_field_for_str(value, declared_entities):
+    if value in declared_entities:
+        return "Schema.Types.ObjectId"
+    mongoose_type = TYPE_MAP.get(value.lower(), "String")
+    return f'{{"type": "{mongoose_type}"}}'
 
-  if isinstance(value, dict):
-    # Handle processed value descriptions
-    if "type" in value:
-      type_val = value["type"]
-      if type_val in ("array", "list"):
-        if "items" in value:
-          item_type_def = map_osed_to_mongoose_field(
-              value["items"], declared_entities, indent_level
-          )
-          field_def = f"[{item_type_def}]"
-        else:
-          field_def = "[{ type: mongoose.Schema.Types.Mixed }]"
-        return apply_driver_metadata(field_def, metadata)
-      elif type_val == "map":
-        if "value" in value:
-          value_type_def = map_osed_to_mongoose_field(
-              value["value"], declared_entities, indent_level
-          )
-          field_def = f"{{ type: Map, of: {value_type_def} }}"
-        else:
-          field_def = "{ type: Map, of: mongoose.Schema.Types.Mixed }"
-        return apply_driver_metadata(field_def, metadata)
-      elif type_val == "reference":
-        if "ref" in value:
-          ref_entity = value["ref"]
-          if ref_entity in declared_entities:
-            field_def = f"{{ type: mongoose.Schema.Types.ObjectId, ref: '{to_pascal_case(ref_entity)}' }}"
-          else:
-            field_def = "{ type: mongoose.Schema.Types.Mixed }"
-        else:
-          field_def = "{ type: mongoose.Schema.Types.Mixed }"
-        return apply_driver_metadata(field_def, metadata)
 
-    # Case 4: It's a nested object (sub-schema)
-    closing_brace_indent = "  " * indent_level
-    sub_schema_content = generate_mongoose_schema_content(
-        value, declared_entities, indent_level + 1
-    )
-    field_def = f"{{\n{sub_schema_content}\n{closing_brace_indent}}}"
-    return apply_driver_metadata(field_def, metadata)
+def _mongoose_field_for_list(value, declared_entities, indent_level):
+    # Always render as an array of classic Mongoose type objects
+    if len(value) == 1:
+        item_type = _mongoose_field_for_dict(
+            value[0], declared_entities, indent_level
+        )
+        return f"[{item_type}]"
+    item_types = [
+        _mongoose_field_for_dict(item, declared_entities, indent_level)
+        for item in value
+    ]
+    return f"[{', '.join(item_types)}]"
 
-  # Fallback for unsupported structures
-  print(
-      f"⚠️  Warning: Unsupported OSED structure '{value}'. Falling back to 'Mixed' type. "
-      "This disables type validation and change tracking for this field.",
-      file=sys.stderr,
-  )
-  field_def = "{ type: mongoose.Schema.Types.Mixed }"
-  return apply_driver_metadata(field_def, metadata)
+
+def _mongoose_field_for_dict(value, declared_entities, indent_level):
+    # Handle primitive types
+    if isinstance(value, str):
+        if value == "string" or value == "email":
+            return "{ type: String }"
+        if value == "number":
+            return "{ type: Number }"
+        if value == "boolean":
+            return "{ type: Boolean }"
+        if value == "date":
+            return "{ type: Date }"
+        if value in declared_entities:
+            return "{ type: Schema.Types.ObjectId }"
+        return "{ type: String }"
+    if isinstance(value, dict):
+        t = value.get("type")
+        # Fix: always map 'reference' type to Schema.Types.ObjectId
+        if t == "reference" and "ref" in value:
+            ref_entity = value["ref"]
+            # Capitalize entity name for ref
+            ref_cap = ref_entity[0].upper() + ref_entity[1:]
+            return f"{{ type: Schema.Types.ObjectId, ref: '{ref_cap}' }}"
+        if t in ("array", "list"):
+            items_schema = _mongoose_field_for_dict(
+                value["items"], declared_entities, indent_level
+            )
+            return f"[{items_schema}]"
+        if t == "map":
+            value_schema = _mongoose_field_for_dict(
+                value["value"], declared_entities, indent_level
+            )
+            return f"{{ type: Map, of: {value_schema} }}"
+        if t == "boolean":
+            return "{ type: Boolean }"
+        if t == "string" or t == "email":
+            return "{ type: String }"
+        if t == "number":
+            return "{ type: Number }"
+        if t == "date":
+            return "{ type: Date }"
+    return "{ type: String }"
+
+
+def _mongoose_field_for_other():
+    return "Mixed"
+
+
+def _js_literal(val):
+    """Recursively convert a Python dict to a JS object literal string for Mongoose schemas."""
+    if isinstance(val, dict):
+        items = []
+        for k, v in val.items():
+            items.append(f"{k}: {_js_literal(v)}")
+        return f"{{{', '.join(items)}}}"
+    elif isinstance(val, list):
+        return f"[{', '.join(_js_literal(x) for x in val)}]"
+    elif isinstance(val, str):
+        # For known JS types, don't quote
+        if val in [
+            "String",
+            "Number",
+            "Boolean",
+            "Date",
+            "Buffer",
+            "ObjectId",
+            "Mixed",
+            "Map",
+            "Schema.Types.ObjectId",
+        ]:
+            return val
+        return f"'{val}'"
+    elif isinstance(val, bool):
+        return "true" if val else "false"
+    elif val is None:
+        return "null"
+    else:
+        return str(val)
 
 
 def apply_driver_metadata(field_def: str, metadata: Dict[str, Any]) -> str:
-  """Apply driver metadata to a field definition."""
-  if not metadata:
-    return field_def
+    """
+    Apply driver metadata (required, unique, index, default, enum) to a field definition.
+    Output as a Mongoose JS object literal (never JSON).
+    """
 
-  # Remove the outer braces to add metadata
-  if field_def.startswith("{") and field_def.endswith("}"):
-    inner_content = field_def[1:-1].strip()
-  else:
-    return field_def
+    # Convert the field_def string to a dict for merging
+    def js_obj_to_dict(js_obj):
+        js_obj = js_obj.replace(
+            "Schema.Types.ObjectId", '"Schema.Types.ObjectId"'
+        )
+        js_obj = (
+            js_obj.replace("String", '"String"')
+            .replace("Number", '"Number"')
+            .replace("Boolean", '"Boolean"')
+            .replace("Date", '"Date"')
+            .replace("Map", '"Map"')
+        )
+        js_obj = re.sub(r"([a-zA-Z0-9_]+):", r'"\1":', js_obj)
+        js_obj = js_obj.replace("'", '"')
+        return json.loads(js_obj)
 
-  # Add metadata properties
-  for key, value in metadata.items():
-    if key in ("type", "ref"):  # Skip these as they're already in the field definition
-      continue
-    elif key == "required" and value is True:
-      inner_content += ", required: true"
-    elif key == "default":
-      if isinstance(value, str) and value == "now":
-        inner_content += ", default: Date.now"
-      elif isinstance(value, bool):
-        inner_content += f", default: {str(value).lower()}"
-      else:
-        # Use single quotes for consistency
-        if isinstance(value, str):
-          inner_content += f", default: '{value}'"
-        else:
-          inner_content += f", default: {json.dumps(value)}"
-    elif key == "unique" and value is True:
-      inner_content += ", unique: true"
-    elif key == "index" and value is True:
-      inner_content += ", index: true"
-    elif key == "enum":
-      enum_values = json.dumps(value)
-      inner_content += f", enum: {enum_values}"
+    base_dict = js_obj_to_dict(field_def)
+    base_dict.update(metadata)
 
-  return f"{{ {inner_content} }}"
+    # Convert back to JS object literal
+    def dict_to_js_obj(d):
+        items = []
+        canonical_types = {
+            "String",
+            "Boolean",
+            "Number",
+            "Date",
+            "Schema.Types.ObjectId",
+            "Map",
+        }
+        for k, v in d.items():
+            if isinstance(v, dict):
+                items.append(f"{k}: {dict_to_js_obj(v)}")
+            elif isinstance(v, list):
+                items.append(
+                    f"{k}: [{', '.join(dict_to_js_obj(x) if isinstance(x, dict) else (x if (isinstance(x, str) and x in canonical_types) else repr(x) if isinstance(x, str) else str(x)) for x in v)}]"
+                )
+            elif isinstance(v, str) and v in canonical_types:
+                items.append(f"{k}: {v}")
+            elif isinstance(v, str) and v.startswith("Schema.Types."):
+                items.append(f"{k}: {v}")
+            elif isinstance(v, str):
+                items.append(f"{k}: '{v}'")
+            elif isinstance(v, bool):
+                items.append(f"{k}: {'true' if v else 'false'}")
+            else:
+                items.append(f"{k}: {v}")
+        return "{ " + ", ".join(items) + " }"
+
+    return dict_to_js_obj(base_dict)
 
 
 def generate_typescript_interface_content(
     description: Dict[str, Any], declared_entities: set[str], indent_level: int
 ) -> str:
-  """Generates the inner content for a TypeScript interface."""
-  fields = []
-  indent = "  " * indent_level
-  for key, value in description.items():
-    camel_key = to_camel_case(key)
-
-    # Let map_osed_to_typescript_type handle all the processing
-    ts_type = map_osed_to_typescript_type(
-        value, declared_entities, indent_level
-    )
-    fields.append(f"{indent}{camel_key}: {ts_type};")
-  return "\n".join(fields)
+    """Generate TypeScript interface content from entity description."""
+    lines = []
+    for field_name, field_value in description.items():
+        if field_name in ("_id", "id"):  # Skip ID fields
+            continue
+        ts_type = map_osed_to_typescript_type(
+            field_value, declared_entities, indent_level
+        )
+        lines.append(f"{field_name}: {ts_type};")
+    return "\n".join(lines)
 
 
 def generate_mongoose_schema_content(
     description: Dict[str, Any], declared_entities: set[str], indent_level: int
 ) -> str:
-  """
-  Generates the inner content (the fields) for a Mongoose schema from an
-  OSED description object.
-  """
-  fields = []
-  indent = "  " * indent_level
-  for key, value in description.items():
-    camel_key = to_camel_case(key)
+    """Generate Mongoose schema content from entity description."""
+    lines = []
+    for field_name, field_value in description.items():
+        if field_name in ("_id", "id"):  # Skip ID fields
+            continue
+        # Process driver metadata
+        processed_value, metadata = process_driver_metadata(
+            field_value, declared_entities
+        )
+        # Always get the classic Mongoose type object
+        mongoose_type = _mongoose_field_for_dict(
+            processed_value, declared_entities, indent_level
+        )
 
-    # Let map_osed_to_mongoose_field handle all the processing
-    field_definition = map_osed_to_mongoose_field(
-        value, declared_entities, indent_level
-    )
+        # Merge metadata into the classic Mongoose object (if it's a dict)
+        # Convert the mongoose_type string to a dict for merging
+        # e.g., '{ type: String }' -> {"type": "String"}
+        def js_obj_to_dict(js_obj):
+            # crude conversion for simple cases
+            js_obj = js_obj.replace(
+                "Schema.Types.ObjectId", '"Schema.Types.ObjectId"'
+            )
+            js_obj = (
+                js_obj.replace("String", '"String"')
+                .replace("Number", '"Number"')
+                .replace("Boolean", '"Boolean"')
+                .replace("Date", '"Date"')
+                .replace("Map", '"Map"')
+            )
+            js_obj = re.sub(r"([a-zA-Z0-9_]+):", r'"\1":', js_obj)
+            js_obj = js_obj.replace("'", '"')
+            return json.loads(js_obj)
 
-    fields.append(f"{indent}{camel_key}: {field_definition}")
-  return ",\n".join(fields)
+        base_dict = js_obj_to_dict(mongoose_type)
+        # Only merge metadata for primitives and references, not arrays/maps
+        if (
+            isinstance(base_dict, dict)
+            and base_dict.get("type") not in ["Map"]
+            and not isinstance(base_dict.get("type"), list)
+        ):
+            # Remove 'type' from metadata if it's 'reference' and processed_value is a reference
+            if (
+                metadata.get("type") == "reference"
+                and isinstance(processed_value, dict)
+                and processed_value.get("type") == "reference"
+            ):
+                metadata = {k: v for k, v in metadata.items() if k != "type"}
+            base_dict.update(metadata)
+
+        # Convert back to JS object literal
+        def dict_to_js_obj(d):
+            items = []
+            canonical_types = {
+                "String",
+                "Boolean",
+                "Number",
+                "Date",
+                "Schema.Types.ObjectId",
+                "Map",
+            }
+            for k, v in d.items():
+                # Fix: treat 'boolean' (lowercase) as canonical 'Boolean'
+                if isinstance(v, str) and v.lower() == "boolean":
+                    items.append(f"{k}: Boolean")
+                elif isinstance(v, str) and v in canonical_types:
+                    items.append(f"{k}: {v}")
+                elif isinstance(v, str) and v.startswith("Schema.Types."):
+                    items.append(f"{k}: {v}")
+                elif isinstance(v, str):
+                    items.append(f"{k}: '{v}'")
+                elif isinstance(v, bool):
+                    items.append(f"{k}: {'true' if v else 'false'}")
+                else:
+                    items.append(f"{k}: {v}")
+            return "{ " + ", ".join(items) + " }"
+
+        field_def = (
+            dict_to_js_obj(base_dict)
+            if isinstance(base_dict, dict)
+            else mongoose_type
+        )
+        lines.append(f"{field_name}: {field_def},")
+    return "\n".join(lines)
 
 
 def generate_index_calls(
     description: Dict[str, Any], declared_entities: set[str], camel_name: str
 ) -> list[str]:
-  """
-  Generates explicit index calls for fields that have index: true.
-  Returns a list of index call strings.
-  """
-  index_calls = []
-
-  for key, value in description.items():
-    if isinstance(value, dict) and is_driver_metadata(value):
-      processed_value, metadata = process_driver_metadata(value, declared_entities)
-
-      # Check if this field has index: true
-      if metadata.get("index") is True:
-        camel_key = to_camel_case(key)
-        index_options = {}
-
-        # Add unique option if field is also unique
-        if metadata.get("unique") is True:
-          index_options["unique"] = True
-
-        if index_options:
-          options_str = ", " + json.dumps(index_options)
-        else:
-          options_str = ""
-
-        index_calls.append(f"{camel_name}Schema.index({{ {camel_key}: 1 }}{options_str});")
-
-  return index_calls
+    """Generate Mongoose index calls for fields with index metadata."""
+    index_calls = []
+    for field_name, field_value in description.items():
+        if field_name in ("_id", "id"):  # Skip ID fields
+            continue
+        # Process driver metadata
+        _, metadata = process_driver_metadata(field_value, declared_entities)
+        if metadata.get("index"):
+            index_calls.append(
+                f"{camel_name}Schema.index({{ {field_name}: 1 }});"
+            )
+    return index_calls
 
 
 def generate_mongoose(document: Dict[str, Any], output_dir: Path) -> None:
-  """
-  Generates Mongoose TypeScript model and enum files from an OSED document.
+    """
+    Generate Mongoose TypeScript schema files from an OSED document.
+    Creates individual model files for each entity and a consolidated interfaces file.
+    """
+    # Check for required 'driver' key
+    driver = document.get("driver")
+    if not driver:
+        error(
+            "Missing required 'driver' key in OSED document. Code generation aborted.",
+            context=f"output_dir: {output_dir}",
+            suggestions=[
+                "Add a supported 'driver' key to your OSED document (e.g., 'mongoose')."
+            ],
+        )
+        sys.exit(2)
 
-  This function iterates through the entities declared in the document.
-  - If an entity's description is a dictionary, it's treated as a schema
-    and a `.model.ts` file is generated.
-  - If an entity's description is a list of strings, it's treated as an
-    enum and a `.enum.ts` file is generated.
+    # Extract entities
+    entities = document.get("entities", [])
 
-  Args:
-      document: The loaded OSED YAML document as a dictionary.
-      output_dir: The directory where the generated files will be written.
-  """
-  if not output_dir.exists():
-    print(f"📁 Creating output directory: {output_dir}")
+    # Performance note: warn if too many entities
+    if len(entities) > 50:
+        warning(
+            f"Large number of entities detected: {len(entities)}. Generation may be slow.",
+            context=f"output_dir: {output_dir}",
+            suggestions=[
+                "Consider splitting your schema or optimizing your entity definitions."
+            ],
+        )
+
+    # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-  declared_entities = set(document.get("entities", []))
-  # Filter the document to only include descriptions for declared entities.
-  entity_descriptions = {
-      k: v for k, v in document.items() if k in declared_entities
-  }
+    # Generate TypeScript interfaces
+    interface_content = []
+    interface_content.append("import { Schema } from 'mongoose';")
+    interface_content.append("")
 
-  for entity_name, description in entity_descriptions.items():
-    pascal_name = to_pascal_case(entity_name)
-    camel_name = to_camel_case(entity_name)
+    # Generate interfaces for each entity
+    for entity_name in entities:
+        if entity_name in document:
+            description = document[entity_name]
+            if isinstance(description, dict):
+                pascal_name = to_pascal_case(entity_name)
+                interface_name = f"I{pascal_name}"
 
-    file_content = ""
-    output_filename = ""
+                # Warn if optional fields are missing (example: 'description')
+                if "description" not in description:
+                    warning(
+                        f"Entity '{entity_name}' is missing an optional 'description' field.",
+                        context=f"entity: {entity_name}",
+                        suggestions=[
+                            "Add a 'description' field to improve documentation and maintainability."
+                        ],
+                    )
 
-    # Generate a Mongoose TypeScript Model for dictionary-based entities
-    if isinstance(description, dict):
-      # Find dependencies to generate import statements
-      dependencies = get_entity_dependencies(
-          description, declared_entities
-      )
-      import_statements = []
-      for dep in sorted(list(dependencies)):
-        dep_pascal = to_pascal_case(dep)
-        dep_camel = to_camel_case(dep)
-        import_statements.append(
-            f"import {{ I{dep_pascal} }} from './{dep_camel}.model';"
-        )
-      import_block = "\n".join(import_statements)
+                # Generate interface
+                interface_content.append(
+                    f"export interface {interface_name} {{"
+                )
+                interface_content.append("  _id?: Schema.Types.ObjectId;")
+                interface_content.append(
+                    generate_typescript_interface_content(
+                        description, set(entities), 1
+                    )
+                )
+                interface_content.append("}")
+                interface_content.append("")
 
-      interface_name = f"I{pascal_name}"
-      interface_content = generate_typescript_interface_content(
-          description, declared_entities, indent_level=1
-      )
-      schema_content = generate_mongoose_schema_content(
-          description, declared_entities, indent_level=1
-      )
-      index_calls = generate_index_calls(description, declared_entities, camel_name)
+    # Write interfaces file
+    interfaces_file = output_dir / "interfaces.ts"
+    with open(interfaces_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(interface_content))
 
-      template = f"""
-import mongoose, {{ Document, Schema, model }} from "mongoose";
-{import_block}
+    # Generate individual model files for each entity
+    for entity_name in entities:
+        if entity_name in document:
+            description = document[entity_name]
+            if isinstance(description, dict):
+                camel_name = to_camel_case(entity_name)
+                pascal_name = to_pascal_case(entity_name)
+                interface_name = f"I{pascal_name}"
 
-export interface {interface_name} extends Document {{
-{interface_content}
-}}
+                # Generate model file content
+                model_content = []
+                model_content.append(
+                    "import { Schema, model } from 'mongoose';"
+                )
+                model_content.append(
+                    f"import {{ {interface_name} }} from './interfaces.js';"
+                )
+                model_content.append("")
 
-const {camel_name}Schema = new Schema<{interface_name}>(
-  {{
-{schema_content}
-  }},
-  {{ timestamps: true }}
-);
+                # Generate schema
+                model_content.append(
+                    f"export const {camel_name}Schema = new Schema<{interface_name}>({{"
+                )
+                model_content.append(
+                    generate_mongoose_schema_content(
+                        description, set(entities), 1
+                    )
+                )
+                model_content.append("});")
+                model_content.append("")
 
-{chr(10).join(index_calls)}
+                # Generate index calls
+                index_calls = generate_index_calls(
+                    description, set(entities), camel_name
+                )
+                for index_call in index_calls:
+                    model_content.append(index_call)
+                model_content.append("")
 
-export const {pascal_name} = model<{interface_name}>("{pascal_name}", {camel_name}Schema);
-"""
-      file_content = template.strip() + "\n"
-      output_filename = f"{camel_name}.model.ts"
+                # Generate model
+                model_content.append(
+                    f"export const {pascal_name} = model<{interface_name}>('{pascal_name}', {camel_name}Schema);"
+                )
+                model_content.append("")
 
-    # Generate a TypeScript Enum for list-based entities
-    elif isinstance(description, list) and all(
-        isinstance(v, str) for v in description
-    ):
-      enum_name = f"{pascal_name}Enum"
-      type_name = pascal_name
-      enum_values = json.dumps(description, indent=2)
-      template = f"""
-export const {enum_name} = {enum_values} as const;
+                # Write individual model file
+                model_file = output_dir / f"{entity_name}.model.ts"
+                with open(model_file, "w", encoding="utf-8") as f:
+                    f.write("\n".join(model_content))
 
-export type {type_name} = typeof {enum_name}[number];
-"""
-      file_content = template.strip() + "\n"
-      output_filename = f"{camel_name}.enum.ts"
-
-    if file_content and output_filename:
-      output_path = output_dir / output_filename
-      print(f"✅ Writing Mongoose TypeScript artifact to {output_path}")
-      output_path.write_text(file_content, encoding="utf-8")
+    info(f"Generated Mongoose schemas in {output_dir}")
+    info(f"  \ud83d\udcc4 Interfaces: {interfaces_file}")
+    for entity_name in entities:
+        if entity_name in document:
+            model_file = output_dir / f"{entity_name}.model.ts"
+            info(f"  \ud83d\udcc4 Model: {model_file}")
 
 
 def main():
+    """Main entry point for the generate command."""
     parser = get_arg_parser()
-    parser.add_argument(
-        "--out",
-        required=True,
-        help="Output directory for generated code."
-    )
     parser.add_argument(
         "--target",
         required=True,
-        help="Target driver for code generation (e.g., 'mongoose')."
+        choices=["mongoose"],
+        help="The target framework to generate for",
     )
+    parser.add_argument(
+        "--out",
+        default=".",
+        help="Output directory for generated files",
+    )
+
     args = parser.parse_args()
 
-    # Load the OSED YAML file
-    data_path = Path(args.file)
-    if not data_path.exists():
-        print(f"❌ Data file not found: '{data_path}'")
+    # Load the OSED document
+    document = load_yaml(args.file)
+
+    # Generate based on target
+    if args.target.lower() == "mongoose":
+        try:
+            generate_mongoose(document, Path(args.out))
+        except Exception as e:
+            error(
+                f"Generation failed: {e}",
+                context=f"target: {args.target}, out: {args.out}",
+                suggestions=[
+                    "Check your OSED document for errors.",
+                    "Ensure the output directory is writable.",
+                ],
+            )
+            sys.exit(1)
+    else:
+        error(
+            f"Unknown target: {args.target}", context=f"target: {args.target}"
+        )
         sys.exit(1)
-    document = load_yaml(data_path)
 
-    # Output directory
-    output_dir = Path(args.out)
-
-    # Only support mongoose for now
-    if args.target not in {"mongoose", "mongoose-mongo", "mongoose-mongodb"}:
-        print(f"❌ Unsupported target: {args.target}")
-        sys.exit(1)
-
-    print(f"🚀 Generating mongoose TypeScript schema from {data_path} into {output_dir}")
-    generate_mongoose(document, output_dir)
 
 if __name__ == "__main__":
     main()

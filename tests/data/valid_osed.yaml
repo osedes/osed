@@ -8,24 +8,24 @@ entities:
 
 universals:
   - common:
-    - title
-    - version
-    - authors
+      - title
+      - version
+      - authors
   - programming:
-    - type
-    - list
-    - items
-    - map
-    - key
-    - value
-    - string
-    - dictionary
+      - type
+      - list
+      - items
+      - map
+      - key
+      - value
+      - string
+      - dictionary
   - markdown
 
 particulars:
   - programming:
-    - dotAlphanumeric
-    - nestedListOfStrings
+      - dotAlphanumeric
+      - nestedListOfStrings
 
 documentDescription: string
 entityDescription:
@@ -37,4 +37,3 @@ valueDescription:
   - string
   - nestedListOfStrings
   - dictionary
-...

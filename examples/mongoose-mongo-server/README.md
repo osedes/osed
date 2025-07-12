@@ -1,9 +1,9 @@
 # Mongoose-Mongo Server Example
 
 > **Note:** This example assumes that the models and routes have already been
-generated from an OSED metadata YAML document. For details on how to author
-metadata and generate code, see the main [README.md](../../README.md) and
-follow the end-to-end workflow instructions there.
+> generated from an OSED metadata YAML document. For details on how to author
+> metadata and generate code, see the main [README.md](../../README.md) and
+> follow the end-to-end workflow instructions there.
 
 This example demonstrates a modular, production-ready Express server using
 Mongoose and TypeScript (ES modules, strict mode), generated from OSED metadata.
@@ -20,18 +20,20 @@ import userRouter from './path/to/examples/mongoose-mongo-server/src/routes/user
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/osed_demo';
+const MONGO_URI =
+  process.env.MONGO_URI || 'mongodb://localhost:27017/osed_demo';
 
 app.use(express.json());
 app.use('/users', userRouter);
 
-mongoose.connect(MONGO_URI)
+mongoose
+  .connect(MONGO_URI)
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
@@ -75,6 +77,7 @@ Extend the models and routes as needed for your application.
 ## Example API Requests
 
 ### Create a new user
+
 ```bash
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
@@ -88,9 +91,10 @@ curl -X POST http://localhost:3000/users \
 ```
 
 > Note: Replace `<userProfileObjectId>` with a valid UserProfile ObjectId from
-your database.
+> your database.
 
 ### List all users
+
 ```bash
 curl http://localhost:3000/users
 ```
@@ -100,9 +104,11 @@ curl http://localhost:3000/users
 ```sh
 curl http://localhost:3000/
 ```
+
 Response:
+
 ```json
-{"version": "<version-from-package.json>"}
+{ "version": "<version-from-package.json>" }
 ```
 
 ### Health check
@@ -110,7 +116,9 @@ Response:
 ```sh
 curl http://localhost:3000/health
 ```
+
 Response:
+
 ```json
-{"status": "OK"}
+{ "status": "OK" }
 ```

@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - User
@@ -6,6 +6,6 @@ entities:
 User:
   id: systemId
   tags:
-    mongoose:type: true  # Invalid, should be string
+    mongoose:type: true # Invalid, should be string
     mongoose:items: string
-    mongoose:required: "yes"  # Invalid, should be boolean
+    mongoose:required: 'yes' # Invalid, should be boolean

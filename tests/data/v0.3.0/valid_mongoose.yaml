@@ -1,4 +1,5 @@
-osed: "0.3.0"
+osed: '0.3.0'
+driver: 'mongoose-mongo'
 
 entities:
   - Person
@@ -9,8 +10,8 @@ universals:
   - name
   - password
   - contact:
-    - email
-    - phone
+      - email
+      - phone
 
 particulars:
   - systemId
@@ -22,12 +23,12 @@ Person:
   email: email
   phone: phone
   posts:
-    mongoose:type: array
-    mongoose:items: Post
+    type: array
+    items: Post
   comments:
-    mongoose:type: map
-    mongoose:key: systemId
-    mongoose:value: Comment
+    type: map
+    key: systemId
+    value: Comment
 
 Post:
   id: systemId

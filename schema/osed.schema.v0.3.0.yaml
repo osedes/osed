@@ -2,7 +2,7 @@
 
 $id: https://osedes.org/v0.3.0/schema/core/
 
-$schema: "https://json-schema.org/draft/2020-12/schema"
+$schema: 'https://json-schema.org/draft/2020-12/schema'
 
 version: 0.3.0
 
@@ -28,7 +28,7 @@ properties:
   entities:
     type: array
     items:
-      $ref: "#/definitions/entityNamePattern"
+      $ref: '#/definitions/entityNamePattern'
     description: >-
       List of described entities in this document
 
@@ -37,29 +37,29 @@ properties:
     description: >-
       Common nouns with valid semantics both within and outside the system
     items:
-      $ref: "#/definitions/semanticNode"
+      $ref: '#/definitions/semanticNode'
 
   particulars:
     type: array
     description: >-
       Nouns with clearly defined semantics within the system's context
     items:
-      $ref: "#/definitions/semanticNode"
+      $ref: '#/definitions/semanticNode'
 
 propertyNames:
-  $ref: "#/definitions/entityNamePattern"
+  $ref: '#/definitions/entityNamePattern'
 
 definitions:
   entityNamePattern:
     type: string
-    pattern: "^[A-Za-z][A-Za-z0-9._-]*$"
+    pattern: '^[A-Za-z][A-Za-z0-9._-]*$'
 
   semanticNode:
     description: >-
       A recursive structure used in universals/particulars
     anyOf:
       - type: string
-      - $ref: "#/definitions/namedNodeGroup"
+      - $ref: '#/definitions/namedNodeGroup'
 
   namedNodeGroup:
     type: object
@@ -69,7 +69,7 @@ definitions:
       type: array
       minItems: 1
       items:
-        $ref: "#/definitions/semanticNode"
+        $ref: '#/definitions/semanticNode'
 
   flatListOfStrings:
     type: array
@@ -93,9 +93,9 @@ definitions:
         additionalProperties:
           anyOf:
             - type: string
-            - $ref: "#/definitions/valueDescription"
-            - $ref: "#/definitions/metadataObject"
-      - $ref: "#/definitions/flatListOfStrings"
+            - $ref: '#/definitions/valueDescription'
+            - $ref: '#/definitions/metadataObject'
+      - $ref: '#/definitions/flatListOfStrings'
 
   metadataObject:
     description: >-
@@ -109,9 +109,8 @@ definitions:
 additionalProperties:
   anyOf:
     - type: string
-    - $ref: "#/definitions/flatListOfStrings"
-    - $ref: "#/definitions/valueDescription"
-
+    - $ref: '#/definitions/flatListOfStrings'
+    - $ref: '#/definitions/valueDescription'
 # Note:
 # Framework-specific metadata extensions (e.g., mongoose:, sql:, graphql:)
 # are supported through the metadataObject definition. These extensions

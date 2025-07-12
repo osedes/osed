@@ -1,6 +1,6 @@
 # osed.schema.yaml (v0.2.0)
 
-$schema: "https://json-schema.org/draft/2020-12/schema"
+$schema: 'https://json-schema.org/draft/2020-12/schema'
 title: OSED Document Schema
 type: object
 required:
@@ -11,12 +11,12 @@ properties:
     type: string
     description: >-
       Version of the OSED specification (SemVer)
-    pattern: "^[0-9]+.[0-9]+.[0-9]+$"
+    pattern: '^[0-9]+.[0-9]+.[0-9]+$'
 
   entities:
     type: array
     items:
-      $ref: "#/definitions/entityNamePattern"
+      $ref: '#/definitions/entityNamePattern'
     description: >-
       List of described entities in this document
 
@@ -25,29 +25,29 @@ properties:
     description: >-
       Common nouns with valid semantics both within and outside the system
     items:
-      $ref: "#/definitions/semanticNode"
+      $ref: '#/definitions/semanticNode'
 
   particulars:
     type: array
     description: >-
       Nouns with clearly defined semantics within the system's context
     items:
-      $ref: "#/definitions/semanticNode"
+      $ref: '#/definitions/semanticNode'
 
 propertyNames:
-  $ref: "#/definitions/entityNamePattern"
+  $ref: '#/definitions/entityNamePattern'
 
 definitions:
   entityNamePattern:
     type: string
-    pattern: "^[A-Za-z][A-Za-z0-9._-]*$"
+    pattern: '^[A-Za-z][A-Za-z0-9._-]*$'
 
   semanticNode:
     description: >-
       A recursive structure used in universals/particulars
     anyOf:
       - type: string
-      - $ref: "#/definitions/namedNodeGroup"
+      - $ref: '#/definitions/namedNodeGroup'
 
   namedNodeGroup:
     type: object
@@ -57,7 +57,7 @@ definitions:
       type: array
       minItems: 1
       items:
-        $ref: "#/definitions/semanticNode"
+        $ref: '#/definitions/semanticNode'
 
   flatListOfStrings:
     type: array
@@ -79,15 +79,14 @@ definitions:
         additionalProperties:
           anyOf:
             - type: string
-            - $ref: "#/definitions/valueDescription"
-      - $ref: "#/definitions/flatListOfStrings"
+            - $ref: '#/definitions/valueDescription'
+      - $ref: '#/definitions/flatListOfStrings'
 
 additionalProperties:
   anyOf:
     - type: string
-    - $ref: "#/definitions/flatListOfStrings"
-    - $ref: "#/definitions/valueDescription"
-
+    - $ref: '#/definitions/flatListOfStrings'
+    - $ref: '#/definitions/valueDescription'
 # Note:
 # Special Value Descriptions (type: list / map) intentionally excluded from
 # core. They are to be handled in downstream metadata extensions (e.g.,

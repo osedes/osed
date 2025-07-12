@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - User
@@ -8,5 +8,5 @@ User:
   name: string
   settings:
     mongoose:type: map
-    mongoose:key: integer  # Invalid, should be 'string'
+    mongoose:key: integer # Invalid, should be 'string'
     mongoose:value: string

@@ -7,8 +7,6 @@ tests/__pycache__/
 bin/
 # symlink to lib
 lib64
-# Codegen output
-out/
 # Server stub and other examples
 /examples/*/dist/
 /examples/*/node_modules/
@@ -16,6 +14,8 @@ out/
 # CPP build
 src/cpp/CMakeCache.txt
 src/cpp/CMakeFiles/
+
+.osed/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -124,11 +124,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# IDE
-.vscode/
-.idea/
-
-# OSED Development Context Files
-.ai-session-state.yaml
-.ai-context.json
-DEVELOPMENT_LOG.md
+# Ignore the contents of the 'local' directory, but keep the directory itself.
+/local/*
+!/local/.gitkeep

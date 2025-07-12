@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - Person
@@ -7,8 +7,8 @@ universals:
   - name
   - password
   - contact:
-    - email
-    - phone
+      - email
+      - phone
 
 particulars:
   - systemId

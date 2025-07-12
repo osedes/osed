@@ -1,0 +1,26 @@
+# Valid semanticNode structure test case
+# This should pass all semanticNode validation
+
+osed: '0.3.0'
+entities: []
+
+# Valid semanticNode structures
+universals:
+  - password
+  - contact:
+      - email
+      - phone
+  - identity:
+      - aadhaar
+      - pan
+  - method: [string]
+  - type: [emailType, phoneType]
+  - category: [tag, label]
+
+particulars:
+  - systemId
+  - status: [active, inactive]
+  - role: [admin, user]
+  - nested:
+      - subcategory: [personal, work]
+      - priority: [high, medium, low]

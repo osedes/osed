@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - User
@@ -6,4 +6,4 @@ entities:
 User:
   id: systemId
   tags:
-    mongoose:type: array  # Missing mongoose:items, should fail
+    mongoose:type: array # Missing mongoose:items, should fail

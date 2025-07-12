@@ -1,4 +1,4 @@
-.PHONY: help install install-dev format lint test validate clean context-save context-load context-update
+.PHONY: help install install-dev format format-check lint test validate validate-all clean context-save context-load context-update context build-cpp clean-cpp test-cpp
 
 help: ## Show this help message
 	@echo "OSED Development Commands"
@@ -10,16 +10,43 @@ install: ## Install production dependencies
 
 install-dev: ## Install development dependencies
 	pip install -r requirements-dev.txt
-	pre-commit install
 
 format: ## Format all code files
-	./scripts/format.sh
+	@echo "Formatting Python files with Black..."
+	black .
+	@echo "Formatting other files with Prettier..."
+	prettier --write "*.{json,md}" "schema/**/*.{yaml,yml}" "tests/data/**/*.{yaml,yml}" "examples/**/*.{json,md}"
 
-lint: ## TODO: Shouldn't this trigger 'osed lint' instead?
-	pylint --indent-string='  ' --max-line-length=80 $(find . -name '*.py' -not -path './venv/*' -not -path './.venv/*')
+format-check: ## Check formatting without making changes
+	@echo "Checking Python formatting with Black..."
+	black --check .
+	@echo "Checking other files with Prettier..."
+	prettier --check "*.{json,md}" "schema/**/*.{yaml,yml}" "tests/data/**/*.{yaml,yml}" "examples/**/*.{json,md}"
 
-test: ## Run tests
+lint: ## Lint Python code
+	git ls-files '*.py' | xargs pylint --indent-string='  ' --max-line-length=80
+
+test: ## Run Python tests and npm tests
 	pytest tests/ -v
+	@echo ""
+	@echo "Running npm tests in examples..."
+	@if [ -d "examples/mongoose-mongo-server" ]; then \
+		cd examples/mongoose-mongo-server && npm test; \
+	else \
+		echo "No npm tests found in examples/mongoose-mongo-server"; \
+	fi
+
+build-cpp: ## Build C++ components using CMake
+	@echo "Building C++ components..."
+	cd src/cpp && cmake -B build -S . && cmake --build build
+
+clean-cpp: ## Clean C++ build artifacts
+	@echo "Cleaning C++ build artifacts..."
+	cd src/cpp && rm -rf build/
+
+test-cpp: build-cpp ## Run C++ tests
+	@echo "Running C++ tests..."
+	# Add C++ test commands here when implemented
 
 validate: ## Validate OSED documents
 	osed validate -f osed.yaml --schema 0.3.0
@@ -31,7 +58,7 @@ validate-all: ## Validate all OSED documents
 		osed validate -f "$$file" --schema 0.3.0 || exit 1; \
 	done
 
-clean: ## Clean build artifacts
+clean: clean-cpp ## Clean all build artifacts
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info/
@@ -51,14 +78,16 @@ check-line-length: ## Check line lengths in all files
 		fi; \
 	done
 
-pre-commit: ## Run pre-commit hooks on all files
-	pre-commit run --all-files
-
 setup: install-dev ## Set up development environment
 	@echo "Development environment setup complete!"
+	@echo "Note: Install global tools manually:"
+	@echo "  npm install -g prettier"
+	@echo "  pip install conan  # for C++ development"
+	@echo ""
 	@echo "Run 'make format' to format code"
 	@echo "Run 'make lint' to check code quality"
 	@echo "Run 'make test' to run tests"
+	@echo "Run 'make build-cpp' to build C++ components"
 
 context-save: ## Save current development context
 	python3 scripts/ai_context.py save

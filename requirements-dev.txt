@@ -1,19 +1,16 @@
 # Development dependencies for OSED project
 
-# Core dependencies
+# Core dependencies (also needed for development)
 PyYAML>=6.0
 jsonschema>=4.17.0
 referencing>=0.30.0
 
 # Formatting tools
+black>=23.0.0
 isort>=5.12.0
-yapf>=0.32.0
 
 # Linting tools
 pylint>=2.17.0
-
-# Pre-commit hooks
-pre-commit>=3.3.0
 
 # Testing tools
 pytest>=7.3.0
@@ -22,3 +19,6 @@ pytest-cov>=4.1.0
 # Documentation tools
 sphinx>=6.0.0
 sphinx-rtd-theme>=1.2.0
+
+# C++ development tools
+conan>=2.0.0

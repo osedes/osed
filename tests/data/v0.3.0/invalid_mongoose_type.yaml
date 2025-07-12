@@ -1,4 +1,4 @@
-osed: "0.3.0"
+osed: '0.3.0'
 
 entities:
   - Person
@@ -15,9 +15,9 @@ Person:
   id: systemId
   name: name
   posts:
-    mongoose:type: invalid_type  # This should be caught
+    mongoose:type: invalid_type # This should be caught
   comments:
-    mongoose:type: array  # This is valid
+    mongoose:type: array # This is valid
 
 Post:
   id: systemId

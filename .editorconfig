@@ -10,7 +10,13 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-# YAML files
+# Python files - use 4 spaces (PEP 8 standard)
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 80
+
+# YAML files - use 2 spaces
 [*.yml]
 indent_style = space
 indent_size = 2
@@ -21,25 +27,19 @@ indent_style = space
 indent_size = 2
 max_line_length = 80
 
-# Python files
-[*.py]
-indent_style = space
-indent_size = 2
-max_line_length = 80
-
-# Markdown files
+# Markdown files - use 2 spaces
 [*.md]
 indent_style = space
 indent_size = 2
 max_line_length = 80
 
-# JSON files
+# JSON files - use 2 spaces
 [*.json]
 indent_style = space
 indent_size = 2
 max_line_length = 80
 
-# Shell scripts
+# Shell scripts - use 2 spaces
 [*.sh]
 indent_style = space
 indent_size = 2

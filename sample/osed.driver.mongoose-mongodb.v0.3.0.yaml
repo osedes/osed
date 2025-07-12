@@ -36,7 +36,6 @@ user:
     type: string
     required: true
     unique: true
-    index: true
   password:
     type: string
     required: true

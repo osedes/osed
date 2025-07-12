@@ -1,2 +1,2 @@
 osed: 0.2.0
-entities: [valid_name, 1invalid, anotherValid, "@oops"]
+entities: [valid_name, 1invalid, anotherValid, '@oops']

@@ -1,0 +1,11 @@
+osed: '0.3.0'
+
+entities:
+  - User
+
+User:
+  id: systemId
+  tags:
+    mongoose:type: array
+    mongoose:key: string # Should warn, key is extraneous for array type
+    mongoose:items: string

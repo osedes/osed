@@ -1,0 +1,17 @@
+osed: '0.3.0'
+driver: 'mongoose-mongo'
+
+entities:
+  - Person
+
+universals:
+  - name
+  - password
+
+particulars:
+  - systemId
+
+Person:
+  id: systemId
+  password: password
+  name: name

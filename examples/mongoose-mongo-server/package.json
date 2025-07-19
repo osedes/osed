@@ -1,0 +1,30 @@
+{
+  "name": "mongoose-mongo-server",
+  "version": "0.3.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "nodemon --watch src --exec \"node --loader ts-node/esm\" src/index.ts",
+    "test": "NODE_ENV=test node --test --loader ts-node/esm src/__tests__/user.test.ts",
+    "test:watch": "NODE_ENV=test node --test --watch --loader ts-node/esm src/__tests__/user.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.16.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.12",
+    "@types/supertest": "^6.0.2",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

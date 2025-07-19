@@ -1,0 +1,39 @@
+osed: 0.3.0
+driver: mongoose
+
+entities:
+  - user
+  - post
+
+universals:
+  - string
+  - number
+  - boolean
+  - objectid
+
+user:
+  # Invalid: ref with string type
+  name:
+    type: string
+    ref: post
+  # Invalid: ref with number type
+  age:
+    type: number
+    ref: post
+  # Invalid: ref with array of strings
+  tags:
+    type: array
+    of: string
+    ref: post
+  # Valid: ref with objectid type
+  profile:
+    type: objectid
+    ref: post
+  # Valid: ref with array of objectid
+  posts:
+    type: array
+    of: objectid
+    ref: post
+
+post:
+  title: string

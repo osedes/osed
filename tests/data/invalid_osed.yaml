@@ -1,0 +1,13 @@
+# invalid_osed.yaml
+---
+# missing required top-level key
+# osed: 0.2.0
+
+entities:
+  - title
+  - valueDescription
+
+title: string
+valueDescription:
+  - string
+  - dictionary

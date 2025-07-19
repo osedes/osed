@@ -1,0 +1,27 @@
+osed: 0.3.0
+driver: mongoose
+
+entities:
+  - user
+  - post
+
+universals:
+  - string
+  - objectid
+  - array
+
+user:
+  # Valid: ref with objectid type
+  profile:
+    type: objectid
+    ref: post
+  # Valid: ref with array of objectid
+  posts:
+    type: array
+    of: objectid
+    ref: post
+  # Valid: simple string field (no ref)
+  name: string
+
+post:
+  title: string

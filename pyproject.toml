@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osed"
+dynamic = ["version"]
+description = "Open Standard Entity Description - A YAML-based standard for describing entities and their relationships"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "OSED Project Contributors", email = "contact@osed.dev"}
+]
+maintainers = [
+    {name = "OSED Project Contributors", email = "contact@osed.dev"}
+]
+keywords = ["yaml", "schema", "entity", "database", "code-generation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Database",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=6.0",
+    "jsonschema>=4.17.0",
+    "referencing>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.3.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "pylint>=2.17.0",
+]
+
+[project.scripts]
+osed = "python.osed_cli:main"
+
+[project.urls]
+Homepage = "https://github.com/osedes/osed"
+Documentation = "https://github.com/osedes/osed#readme"
+Repository = "https://github.com/osedes/osed"
+"Bug Tracker" = "https://github.com/osedes/osed/issues"
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 80
+skip-string-normalization = true
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

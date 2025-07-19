@@ -1,0 +1,38 @@
+osed: '0.3.0'
+
+entities:
+  - Person
+  - Post
+  - Comment
+
+universals:
+  - name
+  - password
+
+particulars:
+  - systemId
+
+Person:
+  id: systemId
+  name: name
+  posts:
+    mongoose:type: array
+    # Missing mongoose:items - should be caught
+  comments:
+    mongoose:type: map
+    # Missing mongoose:value - should be caught
+  profile:
+    mongoose:type: reference
+    # Missing mongoose:ref - should be caught
+  status:
+    mongoose:type: boolean
+    # No required fields for boolean - should pass
+
+Post:
+  id: systemId
+  title: string
+  content: string
+
+Comment:
+  id: systemId
+  content: string

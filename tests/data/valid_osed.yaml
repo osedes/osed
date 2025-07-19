@@ -1,0 +1,39 @@
+---
+osed: 0.2.0 # @version
+
+entities:
+  - documentDescription
+  - entityDescription
+  - valueDescription
+
+universals:
+  - common:
+      - title
+      - version
+      - authors
+  - programming:
+      - type
+      - list
+      - items
+      - map
+      - key
+      - value
+      - string
+      - dictionary
+  - markdown
+
+particulars:
+  - programming:
+      - dotAlphanumeric
+      - nestedListOfStrings
+
+documentDescription: string
+entityDescription:
+  type: map
+  key: string
+  value: valueDescription
+
+valueDescription:
+  - string
+  - nestedListOfStrings
+  - dictionary

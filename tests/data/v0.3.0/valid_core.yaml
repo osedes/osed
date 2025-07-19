@@ -1,0 +1,21 @@
+osed: '0.3.0'
+
+entities:
+  - Person
+
+universals:
+  - name
+  - password
+  - contact:
+      - email
+      - phone
+
+particulars:
+  - systemId
+
+Person:
+  id: systemId
+  password: password
+  name: name
+  email: email
+  phone: phone

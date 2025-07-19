@@ -1,23 +1,23 @@
 ---
-osed: 0.1.0 # @version
+osed: 0.2.0 # @version
 
 entities:
-  - title
+  # - title
   - documentDescription
-  - version
+  # - version
   - entityDescription
   - valueDescription
-  - specialValueDescription
-  - listDescription
-  - mapDescription
-  - type
-  - list
-  - items
-  - map
-  - key
-  - value
-  - markdown
-  - authors
+  # - specialValueDescription
+  # - listDescription
+  # - mapDescription
+  # - type
+  # - list
+  # - items
+  # - map
+  # - key
+  # - value
+  # - markdown
+  # - authors
   # - NOT_DESCRIBED
 
 universals:
@@ -36,20 +36,19 @@ universals:
     - dictionary
   - markdown
 
-
 particulars:
-  - reserved:
-    - osed
-    - entities
-    - universals
-    - particulars
+  # - reserved:
+  #   - osed
+  #   - entities
+  #   - universals
+  #   - particulars
   - programming:
     - dotAlphanumeric
     - nestedListOfStrings
 
-title: string
+# title: string
 documentDescription: string
-version: dotAlphanumeric
+# version: dotAlphanumeric
 
 entityDescription:
   type: map
@@ -61,16 +60,16 @@ valueDescription:
   - nestedListOfStrings
   - dictionary
 
-specialValueDescription:
-  - listDescription
-  - mapDescription
+# specialValueDescription:
+#   - listDescription
+#   - mapDescription
 
-listDescription:
-  type: list
-  items: valueDescription
+# listDescription:
+#   type: list
+#   items: valueDescription
 
-mapDescription:
-  type: map
-  key: string
-  value: valueDescription
+# mapDescription:
+#   type: map
+#   key: string
+#   value: valueDescription
 ...

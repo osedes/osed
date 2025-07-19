@@ -1,0 +1,5 @@
+osed: test
+entities: []
+universals:
+  - foo: bar
+    extra_field: 123

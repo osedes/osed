@@ -1,0 +1,17 @@
+osed: '0.3.0'
+
+entities:
+  - User
+  - Task
+
+User:
+  id: systemId
+  name: string
+  tasks:
+    mongoose:type: array
+    mongoose:items: entity
+    mongoose:ref: Task # Reference to Task collection
+
+Task:
+  id: systemId
+  title: string

@@ -1,0 +1,10 @@
+# Missing 'osed' key, which should trigger a fatal error in the linter
+driver: 'mongoose-mongo'
+
+entities:
+  - Person
+
+Person:
+  id: systemId
+  password: password
+  name: name

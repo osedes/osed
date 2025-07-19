@@ -1,0 +1,110 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.12.3"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Run tests
+        run: pytest
+
+  mongoose-server:
+    name: Test Mongoose-MongoDB Server Example
+    runs-on: ubuntu-24.04
+    needs: test
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install server dependencies
+        run: |
+          cd examples/mongoose-mongo-server
+          npm install
+
+      - name: Generate test data
+        run: |
+          cd examples/mongoose-mongo-server
+          # Create a simple test OSED file
+          cat > test-data.osed.yaml << 'EOF'
+          osed: "0.3.0"
+          entities:
+            - User
+          universals:
+            - email
+            - password
+            - string
+            - integer
+          particulars:
+            - systemId
+          User:
+            id: systemId
+            name: string
+            email: email
+            password: password
+            isActive:
+              mongoose:type: boolean
+              mongoose:default: true
+          EOF
+
+      - name: Start server
+        run: |
+          cd examples/mongoose-mongo-server
+          npm run build
+          npm start &
+          sleep 10  # Wait for server to start
+
+      - name: Test endpoints
+        run: |
+          cd examples/mongoose-mongo-server
+          chmod +x test_endpoints.sh
+          ./test_endpoints.sh --ip localhost --port 3000
+
+      - name: Run Jest tests
+        run: |
+          cd examples/mongoose-mongo-server
+          npm test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/osed_test

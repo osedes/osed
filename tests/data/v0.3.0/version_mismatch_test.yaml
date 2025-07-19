@@ -1,0 +1,10 @@
+# Test file with different OSED version to test version mismatch warning
+osed: '0.2.0' # Different from current version 0.3.0
+entities: []
+
+universals:
+  - email
+  - password
+
+particulars:
+  - systemId

@@ -1,0 +1,11 @@
+osed: '0.3.0'
+
+entities:
+  - User
+
+User:
+  id: systemId
+  profile:
+    mongoose:type: map
+    mongoose:items: string # Should warn, items is extraneous for map type
+    mongoose:value: string

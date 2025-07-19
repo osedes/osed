@@ -1,0 +1,6 @@
+# Include schema files (essential for validation)
+include schema/*.yaml
+
+# Include license and version (legal and runtime)
+include LICENSE
+include VERSION

@@ -1,0 +1,50 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python files - use 4 spaces (PEP 8 standard)
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 80
+
+# YAML files - use 2 spaces
+[*.yml]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+[*.yaml]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# Markdown files - use 2 spaces
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# JSON files - use 2 spaces
+[*.json]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# Shell scripts - use 2 spaces
+[*.sh]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# Makefiles
+[Makefile]
+indent_style = tab

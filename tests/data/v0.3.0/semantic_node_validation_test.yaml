@@ -1,0 +1,34 @@
+# Comprehensive semanticNode validation test cases
+# These should all fail validation according to semanticNode rules
+
+osed: '0.3.0'
+entities: []
+
+# Test Case 1: Map with more than one key (should fail)
+universals:
+  - contact:
+      - email
+      - phone
+    extra_field: 123 # ❌ Should fail: map with more than one key
+
+# Test Case 2: Unnamed list (should fail)
+particulars:
+  - [email, password] # ❌ Should fail: unnamed list
+
+  # Test Case 3: Map value is string, not list (should fail)
+  - method: string # ❌ Should fail: map value is string, not list
+  - type: email # ❌ Should fail: map value is string, not list
+  - category: tag # ❌ Should fail: map value is string, not list
+
+  # Test Case 4: Empty list in map value (should fail)
+  - empty_group: [] # ❌ Should fail: empty list (minItems: 1)
+
+  # Test Case 5: Nested unnamed list (should fail)
+  - nested:
+      - [a, b, c] # ❌ Should fail: nested unnamed list
+
+  # Test Case 6: Mixed valid/invalid in same structure (should catch all invalid)
+  - mixed:
+      - valid: [string] # ✅ Valid
+      - invalid: string # ❌ Invalid - should be caught
+      - another_valid: [location] # ✅ Valid

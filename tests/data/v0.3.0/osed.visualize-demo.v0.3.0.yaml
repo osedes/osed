@@ -1,0 +1,39 @@
+osed: '0.3.0'
+
+entities:
+  - user
+  - post
+  - comment
+  - userProfile
+
+universals:
+  - name
+  - description
+  - contact:
+      - email
+      - phone
+  - string
+
+user:
+  id: systemId
+  email: email
+  password: string
+  profile: userProfile
+
+post:
+  id: systemId
+  author: user
+  title: string
+  content: string
+
+comment:
+  id: systemId
+  post: post
+  author: user
+  content: string
+
+userProfile:
+  id: systemId
+  displayName: string
+  bio: string
+  avatar: string

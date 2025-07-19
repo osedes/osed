@@ -1,0 +1,117 @@
+# osed.schema.yaml (v0.3.0)
+
+$id: https://osedes.org/v0.3.0/schema/core/
+
+$schema: 'https://json-schema.org/draft/2020-12/schema'
+
+version: 0.3.0
+
+title: OSED Document Schema
+
+description: >-
+  Schema for OSED documents with enhanced metadata support for
+  framework-specific annotations and extensions.
+
+type: object
+
+required:
+  - osed
+  - entities
+
+properties:
+  osed:
+    type: string
+    description: >-
+      Version of the OSED specification (SemVer)
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+  entities:
+    type: array
+    items:
+      $ref: '#/definitions/entityNamePattern'
+    description: >-
+      List of described entities in this document
+
+  universals:
+    type: array
+    description: >-
+      Common nouns with valid semantics both within and outside the system
+    items:
+      $ref: '#/definitions/semanticNode'
+
+  particulars:
+    type: array
+    description: >-
+      Nouns with clearly defined semantics within the system's context
+    items:
+      $ref: '#/definitions/semanticNode'
+
+propertyNames:
+  $ref: '#/definitions/entityNamePattern'
+
+definitions:
+  entityNamePattern:
+    type: string
+    pattern: '^[A-Za-z][A-Za-z0-9._-]*$'
+
+  semanticNode:
+    description: >-
+      A recursive structure used in universals/particulars
+    anyOf:
+      - type: string
+      - $ref: '#/definitions/namedNodeGroup'
+
+  namedNodeGroup:
+    type: object
+    minProperties: 1
+    maxProperties: 1
+    additionalProperties:
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/definitions/semanticNode'
+
+  flatListOfStrings:
+    type: array
+    items:
+      type: string
+    description: >-
+      A flat list of strings used for enums, labels, or categories
+
+  valueDescription:
+    description: >-
+      "A map whose keys are strings and whose values must be either:
+      - a string referring to a universal, particular, or entity
+      - another valueDescription (for nested structure)
+      - or a flat list of strings (e.g., enums or labels).
+      - or an object with metadata annotations (e.g., framework-specific
+        properties)
+      Only these forms are valid. Booleans, nulls, or other scalar types are
+      not permitted."
+    anyOf:
+      - type: object
+        additionalProperties:
+          anyOf:
+            - type: string
+            - $ref: '#/definitions/valueDescription'
+            - $ref: '#/definitions/metadataObject'
+      - $ref: '#/definitions/flatListOfStrings'
+
+  metadataObject:
+    description: >-
+      An object that can contain metadata annotations (e.g., framework-specific
+      prefixed properties) along with the actual value description.
+      Framework-specific metadata should use appropriate prefixes like
+      'mongoose:', 'sql:', 'graphql:', etc.
+    type: object
+    additionalProperties: true
+
+additionalProperties:
+  anyOf:
+    - type: string
+    - $ref: '#/definitions/flatListOfStrings'
+    - $ref: '#/definitions/valueDescription'
+# Note:
+# Framework-specific metadata extensions (e.g., mongoose:, sql:, graphql:)
+# are supported through the metadataObject definition. These extensions
+# should be validated against their respective metadata schemas.

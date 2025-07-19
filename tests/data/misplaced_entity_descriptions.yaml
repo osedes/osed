@@ -1,0 +1,11 @@
+osed: 0.2.0
+entities:
+  - title
+  - version
+
+universals:
+  - common:
+      - title: string # ❌ Misplaced entity description
+      - version
+
+documentDescription: string

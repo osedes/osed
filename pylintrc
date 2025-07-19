@@ -1,0 +1,28 @@
+[MASTER]
+# Specify a configuration for pylint for the OSED project
+init-hook='import sys; sys.path.append(".")'
+
+[FORMAT]
+indent-string='  '
+max-line-length=80
+
+[MESSAGES CONTROL]
+disable=
+    C0301,  # line-too-long (handled by formatter)
+    C0303,  # trailing-whitespace (handled by formatter)
+    C0304,  # missing-final-newline (handled by formatter)
+    C0305,  # trailing-newlines (handled by formatter)
+    W0311,  # bad-indentation (handled by formatter)
+
+[REPORTS]
+output-format=text
+reports=no
+
+[DESIGN]
+max-args=8
+max-locals=20
+max-branches=20
+max-statements=50
+max-parents=7
+max-attributes=10
+max-public-methods=20

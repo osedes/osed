@@ -1,0 +1,173 @@
+# osed.driver.mongoose-mongo.schema.v0.3.0.yaml
+
+$id: https://osedes.org/v0.3.0/schema/driver/mongoose-mongo/
+$schema: 'https://json-schema.org/draft/2020-12/schema'
+
+version: 0.3.0
+
+title: OSED Driver Schema (Mongoose-MongoDB)
+
+description: >-
+  Schema for OSED driver-based metadata with Mongoose-MongoDB specific field definitions.
+  Supports 'driver', all official Mongoose types for 'type', and top-level constraints like 'required', 'unique', 'index', etc. Extensible for future drivers.
+
+type: object
+
+required:
+  - osed
+  - entities
+
+properties:
+  osed:
+    type: string
+    description: Version of the OSED specification (SemVer)
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+  driver:
+    type: string
+    description: DBMS or framework driver for this metadata
+    enum: ['mongoose', 'mongoose-mongo'] # Extendable for future drivers
+
+  entities:
+    type: array
+    items:
+      $ref: '#/definitions/entityNamePattern'
+    description: List of described entities in this document
+
+  universals:
+    type: array
+    description: >-
+      Common nouns with valid semantics both within and outside the system
+    items:
+      $ref: '#/definitions/semanticNode'
+
+  particulars:
+    type: array
+    description: >-
+      Nouns with clearly defined semantics within the system's context
+    items:
+      $ref: '#/definitions/semanticNode'
+
+propertyNames:
+  $ref: '#/definitions/entityNamePattern'
+
+additionalProperties:
+  anyOf:
+    - type: string
+    - $ref: '#/definitions/flatListOfStrings'
+    - $ref: '#/definitions/valueDescription'
+    - type: object
+      additionalProperties:
+        anyOf:
+          - type: string
+          - $ref: '#/definitions/flatListOfStrings'
+          - $ref: '#/definitions/valueDescription'
+
+definitions:
+  entityNamePattern:
+    type: string
+    pattern: '^[A-Za-z][A-Za-z0-9._-]*$'
+
+  semanticNode:
+    description: A recursive structure used in universals/particulars
+    anyOf:
+      - type: string
+      - $ref: '#/definitions/namedNodeGroup'
+
+  namedNodeGroup:
+    type: object
+    minProperties: 1
+    maxProperties: 1
+    additionalProperties:
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/definitions/semanticNode'
+
+  flatListOfStrings:
+    type: array
+    items:
+      type: string
+    description: A flat list of strings used for enums, labels, or categories
+
+  valueDescription:
+    anyOf:
+      - type: string
+      - type: array
+        minItems: 1
+        maxItems: 1
+        items:
+          type: string
+        description: Array shorthand [itemType] for arrays/lists
+      - type: object
+        properties:
+          type:
+            type: string
+            enum:
+              [
+                'String',
+                'string',
+                'Number',
+                'number',
+                'Date',
+                'date',
+                'Buffer',
+                'buffer',
+                'Boolean',
+                'boolean',
+                'Mixed',
+                'mixed',
+                'ObjectId',
+                'objectid',
+                'Array',
+                'array',
+                'List',
+                'list',
+                'Decimal128',
+                'decimal128',
+                'Map',
+                'map',
+                'Schema',
+                'schema',
+                'UUID',
+                'uuid',
+                'BigInt',
+                'bigint',
+                'Double',
+                'double',
+                'Int32',
+                'int32',
+                'Reference',
+                'reference',
+              ]
+            description: Official Mongoose schema types (PascalCase and lowercase supported, 'list' is an alias for 'array', 'reference' is an alias for 'ObjectId')
+          required:
+            type: boolean
+            description: Make this field required
+          unique:
+            type: boolean
+            description: Make this field unique
+          index:
+            type: boolean
+            description: Create an index on this field
+          default:
+            description: Default value for the field
+          ref:
+            type: string
+            description: Reference to another entity (for ObjectId, etc.)
+          items:
+            $ref: '#/definitions/valueDescription'
+            description: Item type for Array/List fields
+          value:
+            $ref: '#/definitions/valueDescription'
+            description: Value type for Map fields (alternative to 'of')
+          of:
+            $ref: '#/definitions/valueDescription'
+            description: Value type for Map fields (alternative to 'value'/'items')
+          enum:
+            type: array
+            items:
+              type: string
+            description: Enumeration of allowed values
+          # Add more Mongoose options as needed
+        additionalProperties: false

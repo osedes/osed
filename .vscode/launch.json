@@ -8,10 +8,12 @@
       "name": "(gdb) osed",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/build/Release/parser",
+      "program": "${workspaceFolder}/build/osed_cli",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${fileDirname}",
+      // Automatically build the project before launching the debugger.
+      "preLaunchTask": "CMake: build",
+      "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
       "MIMode": "gdb",
@@ -28,5 +30,19 @@
           }
       ]
     },
+    {
+      "name": "Python: osed_cli",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/osed_cli.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      // Example arguments for debugging the 'validate' command.
+      // You can change these to test other commands like 'lint' or 'generate'.
+      "args": [
+        "validate",
+        "--file", "osed.yaml"
+      ]
+    }
   ]
 }
